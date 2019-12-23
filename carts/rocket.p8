@@ -40,12 +40,15 @@ __lua__
 -- 33 read or wait my dude by that tom hall
 -- (not on gruber level, but useful)
 -------------------------------
+function _initwalls()
+ walls={}
+ add(walls, {x=0,y=120,w=128,h=7,spr=1})
+ add(walls, {x=0,y=50,w=112,h=7,spr=1})
+end
+
 function _init()
- plr={}
- plr.x=10
- plr.y=124
- plr.dx=0
- plr.dy=0
+ plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ _initwalls()
  
  max_speed=1
  frame=0
@@ -54,33 +57,59 @@ end
 -->8
 -- update tab
 -------------------------------
-function _update60()
+function _intersects(px,py,x,y,w,h) --pt intersects rect
+
+ if px>x and px<x+w and py>y and py<y+h then
+  --printh("px=" .. px)
+  --printh("py=" .. py)
+  --printh("x=" .. x)
+  --printh("y=" .. y)
+  --printh("w=" .. w)
+  --printh("h=" .. h)
+ end
+  
+ return px>x and px<x+w and py>y and py<y+h
+end
+
+function _updateplayer()
  bst = btn(4)
- if bst then plr.dy+=-0.05 end
- if btn(1) then plr.dx+=0.05 end
- if btn(0) then plr.dx-=0.05 end
+ if (bst) plr.dy+=-0.075
+ if (btn(1)) plr.dx+=0.05
+ if (btn(0)) plr.dx-=0.05
  	
- plr.dy=plr.dy+0.02 -- gravity
+ plr.dy=plr.dy+0.03 -- gravity
  plr.dx*=0.95
  plr.dy*=0.95
  
- if plr.dx > max_speed then plr.dx = max_speed;
- elseif plr.dx < -max_speed then plr.dx = -max_speed
- end
+ if (plr.dx > max_speed) plr.dx = max_speed
+ if (plr.dx < -max_speed) plr.dx = -max_speed
  
  -- integrate position
  plr.y=plr.y+plr.dy
  plr.x=plr.x+plr.dx
- if plr.y>124 then
-  plr.y=124 plr.dy=0
- elseif plr.y<0 then
-  plr.y=0 plr.dy=0
- end
- if plr.x>124 then
-  plr.x=124 plr.dx=0
- elseif plr.x<0 then
-  plr.x=0 plr.dx=0
- end
+ 
+ -- check for collisions
+ local a=false b=false c=false d=false -- player vertex collisions
+ local wl
+ for wl in all(walls) do
+  a=_intersects(plr.x,plr.y,wl.x,wl.y,wl.w,wl.h)
+  b=_intersects(plr.x+plr.w,plr.y,wl.x,wl.y,wl.w,wl.h)
+  c=_intersects(plr.x+plr.w,plr.y+plr.h,wl.x,wl.y,wl.w,wl.h)
+  d=_intersects(plr.x,plr.y+plr.h,wl.x,wl.y,wl.w,wl.h)
+  
+  if ((a or b) and not c and not d) plr.y=wl.y+wl.h plr.dy=0 printh("a="..tostr(a).." b="..tostr(b) .. " c="..tostr(c).." d="..tostr(d))
+  if ((c or d) and not a and not b) plr.y=wl.y-plr.h plr.dy=0 printh("a="..tostr(a).." b="..tostr(b) .. " c="..tostr(c).." d="..tostr(d))
+ end 
+ 
+ -- level bounds
+ if (plr.y>120) plr.y=120 plr.dy=0
+ if (plr.y<0) plr.y=0 plr.dy=0
+ if (plr.x>120) plr.x=120 plr.dx=0
+ if (plr.x<0) plr.x=0 plr.dx=0
+end
+
+function _update60()
+ _updateplayer()
 end -- fn
 
 
@@ -92,13 +121,21 @@ function _draw()
  local c1=8+((frame/5)%2)
  local c2=8+(((frame/5)+1)%2)
  cls ()
- rectfill(plr.x,plr.y,plr.x+2,plr.y+2,5)
  
  if bst then
-  rectfill(plr.x+1,plr.y+3,plr.x+1,plr.y+3,c1)
-  rectfill(plr.x+1,plr.y+4,plr.x+1,plr.y+4,c2)
-  rectfill(plr.x+1,plr.y+5,plr.x+1,plr.y+5,c1)
+  spr(95,plr.x,plr.y+4)
  end
+ 
+ local wl
+ for wl in all(walls) do
+  for x=wl.x,wl.x+wl.w,8 do
+   for y=wl.y,wl.y+wl.h,8 do
+    spr(wl.spr,x,y)
+   end
+  end
+ end
+ 
+ spr(96,plr.x,plr.y)
 
 end -- fn
 ------------------------------
