@@ -40,45 +40,133 @@ __lua__
 -- 33 read or wait my dude by that tom hall
 -- (not on gruber level, but useful)
 -------------------------------
+function _initglobals()
+ max_speed=1
+ frame=0
+ bomb_ttl=2
+ blast_ext=2 -- n pixels
+ fh = 5 -- flame height
+ f_to_light = 20 -- 60 frames of flame to light bombs
+ f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
+end
+
 function _initwalls()
  walls={}
  add(walls, {x=0,y=120,w=128,h=8,spr=1})
- add(walls, {x=40,y=40,w=16,h=16,spr=1})
- add(walls, {x=80,y=80,w=16,h=16,spr=1})
+ add(walls, {x=40,y=40,w=8,h=24,spr=1})
+ add(walls, {x=80,y=40,w=8,h=24,spr=1})
+ add(walls, {x=40,y=64,w=48,h=8,spr=1})
+ add(walls, {x=0,y=88,w=16,h=8,spr=1})
+ add(walls, {x=8,y=96,w=8,h=16,spr=1})
+end
+
+function _initbombs()
+ bombs={}
+ add(bombs, {x=8,y=112,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+ for x=16,120,8 do
+  for y=112,0,-8 do
+   add(bombs, {x=x,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+  end
+ end
+ for y=0,80,8 do
+  add(bombs, {x=0,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+  add(bombs, {x=8,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+ end
+end
+
+function _reset()
+ plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ _initwalls()
+ _initbombs()
+ goal={x=60,y=56,w=8,h=8,spr=3}
+ win=false
+ dead=false
+ actionupafterend=false
+ inputfreezeafterdie=60
 end
 
 function _init()
- plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- _initwalls()
- 
- max_speed=1
- frame=0
+ _initglobals()
+ _reset()
 end
 
 -->8
 -- update tab
 -------------------------------
 function _intersects(px,py,x,y,w,h) --pt intersects rect
-
- if px>x and px<x+w and py>y and py<y+h then
- end
-  
  return px>=x and px<=x+w and py>=y and py<=y+h
 end
 
-function _isvcollide(x1,y1,x2,y2,x3,y3,x4,y4) -- is vertical collision or horizontal most important
- local x5 = max(x1, x3);
- local y5 = max(y1, y3);
- local x6 = min(x2, x4);
- local y6 = min(y2, y4);
+function _rectoverlap(o1,o2) -- returns the overlapping rect
+ return max(o1.x,o2.x),max(o1.y,o2.y),min(o1.x+o1.w,o2.x+o2.w),min(o1.y+o1.h,o2.y+o2.h);
+end
+
+function _isrectoverlap(o1,o2) -- is ovelapping
+ local x5,y5,x6,y6=_rectoverlap(o1,o2)
+ return x6-x5>=0 and y6-y5>=0
+end
+
+function _isvcollide(o1,o2) -- is vertical collision or horizontal most important
+ local x5,y5,x6,y6=_rectoverlap(o1,o2)
  return y6-y5<x6-x5
 end
 
+function _plrcollide(list)
+ local a=false b=false c=false d=false v=false -- player vertex collisions
+ local o
+ for o in all(list) do
+  a=_intersects(plr.x,plr.y,o.x,o.y,o.w,o.h)
+  b=_intersects(plr.x+plr.w,plr.y,o.x,o.y,o.w,o.h)
+  c=_intersects(plr.x+plr.w,plr.y+plr.h,o.x,o.y,o.w,o.h)
+  d=_intersects(plr.x,plr.y+plr.h,o.x,o.y,o.w,o.h)
+  v=_isvcollide(plr,o)
+  
+  if ((a or b) and not c and not d and v) plr.y=o.y+o.h plr.dy=0
+  if ((c or d) and not a and not b and v) plr.y=o.y-plr.h plr.dy=0
+  if ((a or d) and not c and not b and not v) plr.x=o.x+o.w plr.dx=0
+  if ((b or c) and not a and not d and not v) plr.x=o.x-plr.w plr.dx=0
+ end 
+end
+
+function _update_bombs()
+ for b in all(bombs) do
+  if bst and
+   (_intersects(plr.x,plr.y+plr.h,b.x,b.y,b.w,b.h) or _intersects(plr.x+plr.w,plr.y+plr.h,b.x,b.y,b.w,b.h) or
+   _intersects(plr.x+plr.w,plr.y+plr.h+fh,b.x,b.y,b.w,b.h) or _intersects(plr.x,plr.y+plr.h+fh,b.x,b.y,b.w,b.h)) then
+   b.fcount+=1
+   b.nfcount=0
+   if (b.fcount>f_to_light and b.spr==153 and b.lit==nil) b.ttl=bomb_ttl b.lit=true
+  else
+   b.nfcount+=1
+   if (b.nfcount>=f_to_reset) b.fcount = 0
+  end
+   
+  if b.ttl > 0 then
+   b.ttl-=0.01667
+   b.palt=(b.ttl*10)%2
+   if (b.ttl<=0 and b.spr==153) then 
+    b.spr=71 b.ttl=0.1
+    -- explode surrounding bombs
+    for b2 in all(bombs) do
+     if b2.spr==153 and _isrectoverlap(b,b2) then
+      b2.ttl = 0.2
+     end
+    end
+   end
+   if (b.ttl<=0 and b.spr==71) b.spr=72 b.ttl=0.1
+   if (b.ttl<=0 and b.spr==72) b.spr=73 b.ttl=0.1
+   if (b.ttl<=0 and b.spr==73) b.spr=74 b.ttl=0.1
+   if b.ttl<=0 and b.spr==74 then del(bombs,b) end
+   if (b.spr<74 and _isrectoverlap(plr,{x=b.x-blast_ext,y=b.y-blast_ext,w=b.w+(2*blast_ext),h=b.h+(2*blast_ext)})) dead = true
+  end
+ end 
+end
+
 function _updateplayer()
- bst = btn(4)
+ bst = btn(4) and not win and not dead
  if (bst) plr.dy+=-0.075
- if (btn(1)) plr.dx+=0.05
- if (btn(0)) plr.dx-=0.05
+ if (btn(1) and not win and not dead) plr.dx+=0.05
+ if (btn(0) and not win and not dead) plr.dx-=0.05
  	
  plr.dy=plr.dy+0.03 -- gravity
  plr.dx*=0.95
@@ -91,37 +179,52 @@ function _updateplayer()
  plr.y=plr.y+plr.dy
  plr.x=plr.x+plr.dx
  
- -- check for collisions
- local a=false b=false c=false d=false v=false -- player vertex collisions
- local wl
- for wl in all(walls) do
-  a=_intersects(plr.x,plr.y,wl.x,wl.y,wl.w,wl.h)
-  b=_intersects(plr.x+plr.w,plr.y,wl.x,wl.y,wl.w,wl.h)
-  c=_intersects(plr.x+plr.w,plr.y+plr.h,wl.x,wl.y,wl.w,wl.h)
-  d=_intersects(plr.x,plr.y+plr.h,wl.x,wl.y,wl.w,wl.h)
-  v=_isvcollide(plr.x,plr.y,plr.x+plr.w,plr.y+plr.h,wl.x,wl.y,wl.x+wl.w,wl.y+wl.h)
-  
-  if ((a or b) and not c and not d and v) plr.y=wl.y+wl.h plr.dy=0
-  if ((c or d) and not a and not b and v) plr.y=wl.y-plr.h plr.dy=0
-  if ((a or d) and not c and not b and not v) plr.x=wl.x+wl.w plr.dx=0
-  if ((b or c) and not a and not d and not v) plr.x=wl.x-plr.w plr.dx=0
- end 
+_plrcollide(walls)
+_plrcollide(bombs)
  
  -- level bounds
  if (plr.y>120) plr.y=120 plr.dy=0
  if (plr.y<0) plr.y=0 plr.dy=0
  if (plr.x>120) plr.x=120 plr.dx=0
  if (plr.x<0) plr.x=0 plr.dx=0
+ 
+ if (_isrectoverlap(plr,goal)) win=true
 end
 
 function _update60()
  _updateplayer()
+ _update_bombs()
+ 
+ if dead or win then
+  inputfreezeafterdie-=1
+  if (not btn(4)) actionupafterend = true
+  if btn(4) and actionupafterend == true and inputfreezeafterdie<0 then
+   _reset()
+  end
+ end
 end -- fn
 
 
 -->8
 --draw tab
 -------------------------------
+function _draw_objects(list)
+ palt()
+ local o
+ for o in all(list) do
+  for x=o.x,o.x+o.w-1,8 do
+   for y=o.y,o.y+o.h-1,8 do
+    if o.palt ~= nil then
+     palt(o.palt,true)
+    else
+     palt()
+    end
+    spr(o.spr,x,y)
+   end
+  end
+ end
+end
+
 function _draw()
  frame+=1
  local c1=8+((frame/5)%2)
@@ -132,16 +235,26 @@ function _draw()
   spr(95,plr.x,plr.y+4)
  end
  
- local wl
- for wl in all(walls) do
-  for x=wl.x,wl.x+wl.w-1,8 do
-   for y=wl.y,wl.y+wl.h-1,8 do
-    spr(wl.spr,x,y)
-   end
-  end
+ _draw_objects(walls)
+ spr(goal.spr,goal.x,goal.y)
+ _draw_objects(bombs)
+ 
+ palt()
+ if dead then pal(9,6) end
+ spr(96,plr.x,plr.y)
+ pal()
+ 
+ if win then
+  rectfill(44,52,84,76,7)
+  print("YOU WIN",51,58,0)
+  print("[NEXT]",53,66,1)
  end
  
- spr(96,plr.x,plr.y)
+ if dead then
+   rectfill(44,52,84,76,7)
+   print("YOU DIED",49,58,0)
+   print("[RETRY]",51,66,1)
+  end
 
 end -- fn
 ------------------------------
