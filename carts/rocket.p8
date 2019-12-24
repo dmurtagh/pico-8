@@ -42,8 +42,9 @@ __lua__
 -------------------------------
 function _initwalls()
  walls={}
- add(walls, {x=0,y=120,w=128,h=7,spr=1})
- add(walls, {x=0,y=50,w=112,h=7,spr=1})
+ add(walls, {x=0,y=120,w=128,h=8,spr=1})
+ add(walls, {x=40,y=40,w=16,h=16,spr=1})
+ add(walls, {x=80,y=80,w=16,h=16,spr=1})
 end
 
 function _init()
@@ -60,15 +61,17 @@ end
 function _intersects(px,py,x,y,w,h) --pt intersects rect
 
  if px>x and px<x+w and py>y and py<y+h then
-  --printh("px=" .. px)
-  --printh("py=" .. py)
-  --printh("x=" .. x)
-  --printh("y=" .. y)
-  --printh("w=" .. w)
-  --printh("h=" .. h)
  end
   
- return px>x and px<x+w and py>y and py<y+h
+ return px>=x and px<=x+w and py>=y and py<=y+h
+end
+
+function _isvcollide(x1,y1,x2,y2,x3,y3,x4,y4) -- is vertical collision or horizontal most important
+ local x5 = max(x1, x3);
+ local y5 = max(y1, y3);
+ local x6 = min(x2, x4);
+ local y6 = min(y2, y4);
+ return y6-y5<x6-x5
 end
 
 function _updateplayer()
@@ -89,16 +92,19 @@ function _updateplayer()
  plr.x=plr.x+plr.dx
  
  -- check for collisions
- local a=false b=false c=false d=false -- player vertex collisions
+ local a=false b=false c=false d=false v=false -- player vertex collisions
  local wl
  for wl in all(walls) do
   a=_intersects(plr.x,plr.y,wl.x,wl.y,wl.w,wl.h)
   b=_intersects(plr.x+plr.w,plr.y,wl.x,wl.y,wl.w,wl.h)
   c=_intersects(plr.x+plr.w,plr.y+plr.h,wl.x,wl.y,wl.w,wl.h)
   d=_intersects(plr.x,plr.y+plr.h,wl.x,wl.y,wl.w,wl.h)
+  v=_isvcollide(plr.x,plr.y,plr.x+plr.w,plr.y+plr.h,wl.x,wl.y,wl.x+wl.w,wl.y+wl.h)
   
-  if ((a or b) and not c and not d) plr.y=wl.y+wl.h plr.dy=0 printh("a="..tostr(a).." b="..tostr(b) .. " c="..tostr(c).." d="..tostr(d))
-  if ((c or d) and not a and not b) plr.y=wl.y-plr.h plr.dy=0 printh("a="..tostr(a).." b="..tostr(b) .. " c="..tostr(c).." d="..tostr(d))
+  if ((a or b) and not c and not d and v) plr.y=wl.y+wl.h plr.dy=0
+  if ((c or d) and not a and not b and v) plr.y=wl.y-plr.h plr.dy=0
+  if ((a or d) and not c and not b and not v) plr.x=wl.x+wl.w plr.dx=0
+  if ((b or c) and not a and not d and not v) plr.x=wl.x-plr.w plr.dx=0
  end 
  
  -- level bounds
@@ -128,8 +134,8 @@ function _draw()
  
  local wl
  for wl in all(walls) do
-  for x=wl.x,wl.x+wl.w,8 do
-   for y=wl.y,wl.y+wl.h,8 do
+  for x=wl.x,wl.x+wl.w-1,8 do
+   for y=wl.y,wl.y+wl.h-1,8 do
     spr(wl.spr,x,y)
    end
   end
