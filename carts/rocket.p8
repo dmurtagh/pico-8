@@ -118,12 +118,39 @@ end
 
 function _initenemies3()
  enemies={}
+ -- lhs
  _addwpenemy(0,16,{0,16,52,16})
  _addwpenemy(8,24,{0,24,52,24})
  _addwpenemy(16,32,{0,32,52,32})
  _addwpenemy(24,40,{0,40,52,40})
- _addwpenemy(0,48,{0,48,52,100})
- _addwpenemy(24,40,{52,48,0,100})
+ 
+ _addwpenemy(4,20,{0,20,52,60})
+ _addwpenemy(20,20,{52,20,0,60})
+ 
+ _addwpenemy(26,60,{0,40,52,80})
+ _addwpenemy(2,40,{52,40,0,80})
+ 
+ _addwpenemy(0,40,{0,40,52,80})
+ _addwpenemy(36,40,{52,40,0,80})
+ 
+ _addwpenemy(12,60,{0,60,52,100})
+ _addwpenemy(51,60,{52,60,0,100})
+ 
+ _addwpenemy(0,40,{0,40,52,40,52,80,0,80})
+ _addwpenemy(52,80,{52,80,0,80,0,40,52,40})
+ _addwpenemy(0,40,{0,40,0,80,52,80,52,40})
+ _addwpenemy(52,80,{52,80,52,40,0,40,0,80})
+ 
+ -- rhs
+ _addwpenemy(68,16,{68,16,120,16})
+ _addwpenemy(76,24,{68,24,120,24})
+ _addwpenemy(84,32,{68,32,120,32})
+ _addwpenemy(92,40,{68,40,120,40})
+ 
+ _addwpenemy(68,16,{120,16,68,16})
+ _addwpenemy(76,24,{120,24,68,24})
+ _addwpenemy(84,32,{120,32,68,32})
+ _addwpenemy(92,40,{120,40,68,40})
 end
 
 -------------------------------
@@ -139,7 +166,6 @@ function _initglobals()
 end
 
 function _reset()
- level=3
  if (level==nil) level=1
  if level==1 then _initmisc1() _initwalls1() _initbombs1()
  elseif level==2 then _initmisc2() _initwalls2() _initbombs2()
