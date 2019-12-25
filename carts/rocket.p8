@@ -46,7 +46,6 @@ function _initmisc1()
 end
 
 function _initwalls1()
- walls={}
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=40,y=40,w=8,h=24,spr=1})
  add(walls,{x=80,y=40,w=8,h=24,spr=1})
@@ -56,7 +55,6 @@ function _initwalls1()
 end
 
 function _initbombs1()
- bombs={}
  _addbomb(8,112)
  for x=16,120,8 do
   for y=112,0,-8 do
@@ -76,14 +74,12 @@ function _initmisc2()
 end
 
 function _initwalls2()
- walls={}
  add(walls,{x=16,y=120,w=128,h=8,spr=1})
  add(walls,{x=0,y=96,w=112,h=8,spr=1})
  add(walls,{x=0,y=48,w=112,h=8,spr=1})
 end
 
 function _initbombs2()
- bombs={}
  _addbomb(8,120)
  for x=8,120,8 do
    _addbomb(x,112)
@@ -107,8 +103,8 @@ function _initmisc3()
  goal={x=104,y=112,w=8,h=8,spr=3}
 end
 
+
 function _initwalls3()
- walls={}
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=60,y=16,w=8,h=104,spr=1})
 end
@@ -117,7 +113,6 @@ function _initbombs3()
 end
 
 function _initenemies3()
- enemies={}
  -- lhs
  _addwpenemy(0,16,{0,16,52,16})
  _addwpenemy(8,24,{0,24,52,24})
@@ -166,6 +161,7 @@ function _initglobals()
 end
 
 function _reset()
+ walls,bombs,enemies={},{},{}
  if (level==nil) level=1
  if level==1 then _initmisc1() _initwalls1() _initbombs1()
  elseif level==2 then _initmisc2() _initwalls2() _initbombs2()
