@@ -40,45 +40,112 @@ __lua__
 -- 33 read or wait my dude by that tom hall
 -- (not on gruber level, but useful)
 -------------------------------
-function _initglobals()
- max_speed=1
- frame=0
- bomb_ttl=2
- blast_ext=2 -- n pixels
- fh = 5 -- flame height
- f_to_light = 20 -- 60 frames of flame to light bombs
- f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
+function _initmisc1()
+ plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ goal={x=60,y=56,w=8,h=8,spr=3}
 end
 
-function _initwalls()
+function _initwalls1()
  walls={}
- add(walls, {x=0,y=120,w=128,h=8,spr=1})
- add(walls, {x=40,y=40,w=8,h=24,spr=1})
- add(walls, {x=80,y=40,w=8,h=24,spr=1})
- add(walls, {x=40,y=64,w=48,h=8,spr=1})
- add(walls, {x=0,y=88,w=16,h=8,spr=1})
- add(walls, {x=8,y=96,w=8,h=16,spr=1})
+ add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ add(walls,{x=40,y=40,w=8,h=24,spr=1})
+ add(walls,{x=80,y=40,w=8,h=24,spr=1})
+ add(walls,{x=40,y=64,w=48,h=8,spr=1})
+ add(walls,{x=0,y=88,w=16,h=8,spr=1})
+ add(walls,{x=8,y=96,w=8,h=16,spr=1})
 end
 
-function _initbombs()
+function _initbombs1()
  bombs={}
- add(bombs, {x=8,y=112,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+ _addbomb(8,112)
  for x=16,120,8 do
   for y=112,0,-8 do
-   add(bombs, {x=x,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+    _addbomb(x,y)
   end
  end
  for y=0,80,8 do
-  add(bombs, {x=0,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
-  add(bombs, {x=8,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+  _addbomb(0,y)
+  _addbomb(8,y)
  end
 end
 
+---------- Level 2 -----------
+function _initmisc2()
+ plr={} plr.x=0 plr.y=120 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ goal={x=60,y=40,w=8,h=8,spr=3}
+end
+
+function _initwalls2()
+ walls={}
+ add(walls,{x=16,y=120,w=128,h=8,spr=1})
+ add(walls,{x=0,y=96,w=112,h=8,spr=1})
+ add(walls,{x=0,y=48,w=112,h=8,spr=1})
+end
+
+function _initbombs2()
+ bombs={}
+ _addbomb(8,120)
+ for x=8,120,8 do
+   _addbomb(x,112)
+ end
+ _addbomb(120,104)
+ _addbomb(120,96)
+ _addbomb(120,88)
+ for x=8,120,8 do
+  _addbomb(x,80)
+ end
+ _addbomb(8,72)
+ _addbomb(16,72)
+ for x=8,120,8 do
+   _addbomb(x,64)
+  end
+end
+
+---------- Level 3 -----------
+function _initmisc3()
+ plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ goal={x=104,y=112,w=8,h=8,spr=3}
+end
+
+function _initwalls3()
+ walls={}
+ add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ add(walls,{x=60,y=16,w=8,h=104,spr=1})
+end
+
+function _initbombs3()
+end
+
+function _initenemies3()
+ enemies={}
+ _addwpenemy(0,16,{0,16,52,16})
+ _addwpenemy(8,24,{0,24,52,24})
+ _addwpenemy(16,32,{0,32,52,32})
+ _addwpenemy(24,40,{0,40,52,40})
+ _addwpenemy(0,48,{0,48,52,100})
+ _addwpenemy(24,40,{52,48,0,100})
+end
+
+-------------------------------
+function _initglobals()
+ max_speed=1
+ frame=0
+ bomb_ttl=0.6
+ blast_ext=2 -- n pixels
+ flameh = 5 -- flame height
+ f_to_light = 20 -- 60 frames of flame to light bombs
+ f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
+ maxlevel=3
+end
+
 function _reset()
- plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- _initwalls()
- _initbombs()
- goal={x=60,y=56,w=8,h=8,spr=3}
+ level=3
+ if (level==nil) level=1
+ if level==1 then _initmisc1() _initwalls1() _initbombs1()
+ elseif level==2 then _initmisc2() _initwalls2() _initbombs2()
+ elseif level==3 then _initmisc3() _initwalls3() _initbombs3() _initenemies3()
+ end
+
  win=false
  dead=false
  actionupafterend=false
@@ -86,13 +153,24 @@ function _reset()
 end
 
 function _init()
- _initglobals()
+ _initglobals() 
  _reset()
 end
 
 -->8
 -- update tab
--------------------------------
+
+------Utility Init Functions---------
+
+function _addbomb(x,y)
+ add(bombs,{x=x,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+end
+
+function _addwpenemy(x,y,wp) -- waypoint enemy
+ add(enemies,{x=x,y=y,w=8,h=8,wp=wp,spr=182,fr=3,dx=0,dy=0})
+end
+
+------Utility Function---------------
 function _intersects(px,py,x,y,w,h) --pt intersects rect
  return px>=x and px<=x+w and py>=y and py<=y+h
 end
@@ -111,28 +189,47 @@ function _isvcollide(o1,o2) -- is vertical collision or horizontal most importan
  return y6-y5<x6-x5
 end
 
-function _plrcollide(list)
+-------------------------------
+-- Process collisions between the object and the specified list
+function _collide(obj, list)
  local a=false b=false c=false d=false v=false -- player vertex collisions
  local o
  for o in all(list) do
-  a=_intersects(plr.x,plr.y,o.x,o.y,o.w,o.h)
-  b=_intersects(plr.x+plr.w,plr.y,o.x,o.y,o.w,o.h)
-  c=_intersects(plr.x+plr.w,plr.y+plr.h,o.x,o.y,o.w,o.h)
-  d=_intersects(plr.x,plr.y+plr.h,o.x,o.y,o.w,o.h)
-  v=_isvcollide(plr,o)
+  a=_intersects(obj.x,obj.y,o.x,o.y,o.w,o.h)
+  b=_intersects(obj.x+obj.w,obj.y,o.x,o.y,o.w,o.h)
+  c=_intersects(obj.x+obj.w,obj.y+obj.h,o.x,o.y,o.w,o.h)
+  d=_intersects(obj.x,obj.y+obj.h,o.x,o.y,o.w,o.h)
+  v=_isvcollide(obj,o)
   
-  if ((a or b) and not c and not d and v) plr.y=o.y+o.h plr.dy=0
-  if ((c or d) and not a and not b and v) plr.y=o.y-plr.h plr.dy=0
-  if ((a or d) and not c and not b and not v) plr.x=o.x+o.w plr.dx=0
-  if ((b or c) and not a and not d and not v) plr.x=o.x-plr.w plr.dx=0
+  if ((a or b) and not c and not d and v) obj.y=o.y+o.h obj.dy=0
+  if ((c or d) and not a and not b and v) obj.y=o.y-obj.h obj.dy=0
+  if ((a or d) and not c and not b and not v) obj.x=o.x+o.w obj.dx=0
+  if ((b or c) and not a and not d and not v) obj.x=o.x-obj.w obj.dx=0
  end 
+end
+
+function _applygravity(obj)
+ obj.dy=obj.dy+0.03 -- gravity
+ obj.dx*=0.95
+ obj.dy*=0.95
+ 
+ if (obj.dx > max_speed) obj.dx = max_speed
+ if (obj.dx < -max_speed) obj.dx = -max_speed
+ 
+ -- integrate position
+ obj.y=obj.y+obj.dy
+ obj.x=obj.x+obj.dx
+ 
+ -- level bounds
+ if (obj.y>120) obj.y=120 obj.dy=0
+ if (obj.y<0) obj.y=0 obj.dy=0
+ if (obj.x>120) obj.x=120 obj.dx=0
+ if (obj.x<0) obj.x=0 obj.dx=0
 end
 
 function _update_bombs()
  for b in all(bombs) do
-  if bst and
-   (_intersects(plr.x,plr.y+plr.h,b.x,b.y,b.w,b.h) or _intersects(plr.x+plr.w,plr.y+plr.h,b.x,b.y,b.w,b.h) or
-   _intersects(plr.x+plr.w,plr.y+plr.h+fh,b.x,b.y,b.w,b.h) or _intersects(plr.x,plr.y+plr.h+fh,b.x,b.y,b.w,b.h)) then
+  if bst and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
    b.fcount+=1
    b.nfcount=0
    if (b.fcount>f_to_light and b.spr==153 and b.lit==nil) b.ttl=bomb_ttl b.lit=true
@@ -162,31 +259,52 @@ function _update_bombs()
  end 
 end
 
+function _updateenemies()
+ local speed=0.3 -- px/frame
+ local targetx,targety,moved
+ for e in all(enemies) do
+  if e.dead==nil then
+   targetx=e.wp[1] targety=e.wp[2] moved=false
+  
+   if abs(targetx-e.x)>speed then
+    e.flipx=sgn(targetx-e.x)==-1 e.x+=sgn(targetx-e.x)*speed moved=true
+   end
+  
+   if abs(targety-e.y)>speed then
+    e.y+=sgn(targety-e.y)*speed moved=true
+   end
+  
+   if not moved then
+    del(e.wp,targetx) del(e.wp,targety)
+    add(e.wp,targetx) add(e.wp,targety)
+   end
+   if _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
+    e.dead=true
+    e.pal1=3
+    e.pal2=6
+   end
+  
+   if (e.dead==nil and _isrectoverlap(plr,e)) dead=true
+  else
+   _applygravity(e)
+   _collide(e, walls)
+   _collide(e, bombs)
+  end --if dead
+ end --for
+end --function
+
 function _updateplayer()
- bst = btn(4) and not win and not dead
+ if win then return end
+
+ bst = btn(4) and not dead
  if (bst) plr.dy+=-0.075
- if (btn(1) and not win and not dead) plr.dx+=0.05
- if (btn(0) and not win and not dead) plr.dx-=0.05
- 	
- plr.dy=plr.dy+0.03 -- gravity
- plr.dx*=0.95
- plr.dy*=0.95
+ if (btn(1) and not dead) plr.dx+=0.05
+ if (btn(0) and not dead) plr.dx-=0.05
  
- if (plr.dx > max_speed) plr.dx = max_speed
- if (plr.dx < -max_speed) plr.dx = -max_speed
+ _applygravity(plr)
  
- -- integrate position
- plr.y=plr.y+plr.dy
- plr.x=plr.x+plr.dx
- 
-_plrcollide(walls)
-_plrcollide(bombs)
- 
- -- level bounds
- if (plr.y>120) plr.y=120 plr.dy=0
- if (plr.y<0) plr.y=0 plr.dy=0
- if (plr.x>120) plr.x=120 plr.dx=0
- if (plr.x<0) plr.x=0 plr.dx=0
+ _collide(plr, walls)
+ _collide(plr, bombs)
  
  if (_isrectoverlap(plr,goal)) win=true
 end
@@ -194,11 +312,13 @@ end
 function _update60()
  _updateplayer()
  _update_bombs()
+ _updateenemies()
  
  if dead or win then
   inputfreezeafterdie-=1
   if (not btn(4)) actionupafterend = true
   if btn(4) and actionupafterend == true and inputfreezeafterdie<0 then
+   if (win) level=level%maxlevel+1
    _reset()
   end
  end
@@ -210,16 +330,26 @@ end -- fn
 -------------------------------
 function _draw_objects(list)
  palt()
- local o
+ local o,fr,flipx
  for o in all(list) do
   for x=o.x,o.x+o.w-1,8 do
    for y=o.y,o.y+o.h-1,8 do
     if o.palt ~= nil then
      palt(o.palt,true)
     else
-     palt()
+     if o.pal1 ~= nil and o.pal2 != nil then
+      pal(o.pal1, o.pal2)
+     else
+      pal()
+      palt()
+     end
     end
-    spr(o.spr,x,y)
+    
+    fr = 0; -- frame for animation
+    if (o.fr~=nil and o.dead==nil) fr=(frame/15)%o.fr -- don't animate dead things
+    flipx=false
+    if (o.flipx!=nil) flipx=o.flipx
+    spr(o.spr+fr,x,y,1,1,flipx)
    end
   end
  end
@@ -237,6 +367,7 @@ function _draw()
  
  _draw_objects(walls)
  spr(goal.spr,goal.x,goal.y)
+ _draw_objects(enemies)
  _draw_objects(bombs)
  
  palt()
@@ -251,9 +382,9 @@ function _draw()
  end
  
  if dead then
-   rectfill(44,52,84,76,7)
-   print("YOU DIED",49,58,0)
-   print("[RETRY]",51,66,1)
+   --rectfill(44,52,84,76,7)
+   --print("YOU DIED",49,58,0)
+   --print("[RETRY]",51,66,1)
   end
 
 end -- fn
