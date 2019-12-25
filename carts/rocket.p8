@@ -304,7 +304,7 @@ function _updateenemies()
     del(e.wp,targetx) del(e.wp,targety)
     add(e.wp,targetx) add(e.wp,targety)
    end
-   if _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
+   if _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) and not dead then
     e.dead=true
     e.pal1=3
     e.pal2=6
