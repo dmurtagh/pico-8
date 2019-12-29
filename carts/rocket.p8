@@ -42,8 +42,8 @@ __lua__
 -------------------------------
 function _initmisc1()
  plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=60,y=56,w=8,h=8,spr=3,destlevel=2})
-
+ add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=2})
+ add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=4})
 end
 
 function _initwalls1()
@@ -152,55 +152,68 @@ end
 ---------- Level 4 -----------
 function _initmisc4()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=1})
+ add(doors,{x=120,y=32,w=8,h=8,spr=3,destlevel=1})
+ add(doors,{x=120,y=0,w=8,h=8,spr=3,destlevel=5})
+ add(doors,{x=8,y=80,w=8,h=8,spr=3,destlevel=4,destdoor=4})
+ add(doors,{x=0,y=32,w=8,h=8,spr=3,destlevel=4,destdoor=3})
+ 
+ add(spikes,{x=24,y=120,w=64,h=8,spr=58})
 end
 
 function _initwalls4()
- walls={}
- add(walls,{x=0,y=120,w=128,h=8,spr=1})
- add(walls,{x=60,y=16,w=8,h=104,spr=1})
+ add(walls,{x=120,y=8,w=128,h=8,spr=1})
+ add(walls,{x=0,y=88,w=120,h=8,spr=1})
+ add(walls,{x=0,y=96,w=24,h=8,spr=1})
 end
 
 function _initbombs4()
+ for x=0,120,8 do
+  _addbomb(x,40)
+ end
+ 
+ for x=24,120,8 do
+   -- _addbomb(x,120)
+  end
 end
 
 function _initenemies4()
- enemies={}
- -- lhs
- --[[
- _addwpenemy(0,16,{0,16,52,16})
- _addwpenemy(8,24,{0,24,52,24})
- _addwpenemy(16,32,{0,32,52,32})
- _addwpenemy(24,40,{0,40,52,40})
+ local y1=16
+ local y2=24
+ for x=0,120,16 do
+  _addwpenemy(x,y1,{0,y1,0,y2,120,y2,120,y1})
+  _addwpenemy(x+8,y2,{120,y2,120,y1,0,y1,0,y2})
+ end
  
- _addwpenemy(4,20,{0,20,52,60})
- _addwpenemy(20,20,{52,20,0,60})
+ local speed=0.1
+ local delay=-120 -- frames (negative means delay)
+ local y1=108 
+ local y2=94
  
- _addwpenemy(26,60,{0,40,52,80})
- _addwpenemy(2,40,{52,40,0,80})
- 
- _addwpenemy(0,40,{0,40,52,80})
- _addwpenemy(36,40,{52,40,0,80})
- 
- _addwpenemy(12,60,{0,60,52,100})
- _addwpenemy(51,60,{52,60,0,100})
- 
- _addwpenemy(0,40,{0,40,52,40,52,80,0,80})
- _addwpenemy(52,80,{52,80,0,80,0,40,52,40})
- _addwpenemy(0,40,{0,40,0,80,52,80,52,40})
- _addwpenemy(52,80,{52,80,52,40,0,40,0,80})
- 
- -- rhs
- _addwpenemy(68,16,{68,16,120,16})
- _addwpenemy(76,24,{68,24,120,24})
- _addwpenemy(84,32,{68,32,120,32})
- _addwpenemy(92,40,{68,40,120,40})
- 
- _addwpenemy(68,16,{120,16,68,16})
- _addwpenemy(76,24,{120,24,68,24})
- _addwpenemy(84,32,{120,32,68,32})
- _addwpenemy(92,40,{120,40,68,40})
- ]]--
+ for i=0,3,1 do
+  x1=24+(i*16)
+  x2=32+(i*16)
+  doffset=i*80 -- delay before start
+  _addwpenemy(x1,y1,{x1,y1,x1,y2,delay,delay},speed,doffset)
+  _addwpenemy(x2,y1,{x2,y1,x2,y2,delay,delay},speed,doffset)
+ end
+end
+
+---------- Level 5 -----------
+function _initmisc5()
+ plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ add(spikes,{x=24,y=120,w=64,h=8,spr=58})
+end
+
+function _initwalls5()
+end
+
+function _initbombs5()
+end
+
+function _initenemies5()
+ local speed=0.1
+ local delay=-60 -- frames
+ _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
 end
 
 -------------------------------
@@ -213,23 +226,29 @@ function _initglobals()
  f_to_light = 20 -- 60 frames of flame to light bombs
  f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
  maxlevel=3
+ inputfreeze=30
 end
 
 function _reset()
- walls,bombs,enemies,doors={},{},{},{}
+ walls,bombs,enemies,doors,spikes={},{},{},{},{}
  
  if (level==nil) level=1
  if level==1 then _initmisc1() _initwalls1() _initbombs1()
  elseif level==2 then _initmisc2() _initwalls2() _initbombs2()
  elseif level==3 then _initmisc3() _initwalls3() _initbombs3() _initenemies3()
  elseif level==4 then _initmisc4() _initwalls4() _initbombs4() _initenemies4()
+ elseif level==5 then _initmisc5() _initwalls5() _initbombs5() _initenemies5()
  end
 
  win=false
  dead=false
  actionupafterend=false
- inputfreezeafterdie=60
  nextlevel=-1
+ 
+ if destdoor~=nil and #doors>=destdoor then
+  plr.x=doors[destdoor].x plr.y=doors[destdoor].y
+  destdoor=nil
+ end
 end
 
 function _init()
@@ -247,8 +266,8 @@ function _addbomb(x,y)
  add(bombs,{x=x,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
 end
 
-function _addwpenemy(x,y,wp) -- waypoint enemy
- add(enemies,{x=x,y=y,w=8,h=8,wp=wp,spr=182,fr=3,dx=0,dy=0})
+function _addwpenemy(x,y,wp,speed,doffset) -- waypoint enemy
+ add(enemies,{x=x,y=y,w=7.99,h=7.99,wp=wp,spr=182,fr=3,dx=0,dy=0,speed=speed,delay=doffset})
 end
 
 ------Utility Function---------------
@@ -308,7 +327,7 @@ function _applygravity(obj)
  if (obj.x<0) obj.x=0 obj.dx=0
 end
 
-function _update_bombs()
+function _updatebombs()
  for b in all(bombs) do
   if bst and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
    b.fcount+=1
@@ -335,27 +354,34 @@ function _update_bombs()
    if (b.ttl<=0 and b.spr==72) b.spr=73 b.ttl=0.1
    if (b.ttl<=0 and b.spr==73) b.spr=74 b.ttl=0.1
    if b.ttl<=0 and b.spr==74 then del(bombs,b) end
-   if (b.spr<74 and _isrectoverlap(plr,{x=b.x-blast_ext,y=b.y-blast_ext,w=b.w+(2*blast_ext),h=b.h+(2*blast_ext)})) dead = true
+   if (b.spr<74 and _isrectoverlap(plr,{x=b.x-blast_ext,y=b.y-blast_ext,w=b.w+(2*blast_ext),h=b.h+(2*blast_ext)}) and not dead) dead=true inputfreeze=30
   end
  end 
 end
 
 function _updateenemies()
- local speed=0.3 -- px/frame
  local targetx,targety,moved
  for e in all(enemies) do
   if e.dead==nil then
-   targetx=e.wp[1] targety=e.wp[2] moved=false
-  
-   if abs(targetx-e.x)>speed then
-    e.flipx=sgn(targetx-e.x)==-1 e.x+=sgn(targetx-e.x)*speed moved=true
+   local speed=0.3 -- px/frame
+   if (e.speed != nil) speed=e.speed
+   targetx=e.wp[1] targety=e.wp[2] gotonext=true
+   
+   if targetx<0 or (e.delay~=nil and e.delay>0) then -- targetx<0 represents a delay
+    if (e.delay==nil) e.delay=-targetx
+    e.delay-=1
+    gotonext=e.delay<0
+   else
+    e.delay=nil
+    if abs(targetx-e.x)>speed then
+     e.flipx=sgn(targetx-e.x)==-1 e.x+=sgn(targetx-e.x)*speed gotonext=false
+    end
+    if abs(targety-e.y)>speed then
+     e.y+=sgn(targety-e.y)*speed gotonext=false
+    end
    end
-  
-   if abs(targety-e.y)>speed then
-    e.y+=sgn(targety-e.y)*speed moved=true
-   end
-  
-   if not moved then
+   
+   if gotonext then
     del(e.wp,targetx) del(e.wp,targety)
     add(e.wp,targetx) add(e.wp,targety)
    end
@@ -364,8 +390,6 @@ function _updateenemies()
     e.pal1=3
     e.pal2=6
    end
-  
-   if (e.dead==nil and _isrectoverlap(plr,e)) dead=true
   else
    _applygravity(e)
    _collide(e, walls)
@@ -374,28 +398,44 @@ function _updateenemies()
  end --for
 end --function
 
+function _dieoncollision(list)
+ for obj in all(list) do
+  if (obj.dead==nil and _isrectoverlap(plr,obj) and not dead) dead=true inputfreeze=30
+ end
+end
+
 function _updateplayer()
  if win then return end
 
- bst = btn(4) and not dead
+ bst = btn(4) and not dead and inputfreeze<0
  if (bst) plr.dy+=-0.075
- if (btn(1) and not dead) plr.dx+=0.05
- if (btn(0) and not dead) plr.dx-=0.05
+ if (btn(1) and not dead and inputfreeze<0) plr.dx+=0.05
+ if (btn(0) and not dead and inputfreeze<0) plr.dx-=0.05
  
  _applygravity(plr)
  
- _collide(plr, walls)
- _collide(plr, bombs)
+ _collide(plr,walls)
+ _collide(plr,bombs)
+ _collide(plr,spikes)
  
  for d in all(doors) do
-  if (_isrectoverlap(plr,d) and btn(2)) win=true nextlevel=d.destlevel
+  if _isrectoverlap(plr,d) and btn(2) and inputfreeze<0 and not dead then
+   win=true nextlevel=d.destlevel
+   inputfreeze=15
+   if (d.destdoor~=nil) destdoor=d.destdoor
+  end
  end
 end
 
 function _update60()
+
+if (inputfreeze>=0) inputfreeze-=1
+
  _updateplayer()
- _update_bombs()
+ _updatebombs()
  _updateenemies()
+ _dieoncollision(enemies)
+ _dieoncollision(spikes)
  
  if win then
   level=nextlevel
@@ -404,12 +444,12 @@ function _update60()
  end
  
  if dead then
-  inputfreezeafterdie-=1
-  if (not btn(4)) actionupafterend = true
-  if btn(4) and actionupafterend == true and inputfreezeafterdie<0 then
+  local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
+  if (not btn_pressed) actionupafterend = true
+  if btn_pressed and actionupafterend == true and inputfreeze<0 then
    _reset()
-  end
- end
+  end -- if btn_pressed
+ end -- if dead
 end -- fn
 
 
@@ -454,11 +494,8 @@ function _draw()
  end
  
  _draw_objects(walls)
- 
- for d in all(doors) do
-  spr(d.spr,d.x,d.y)
- end
- 
+ _draw_objects(spikes)
+ _draw_objects(doors)
  _draw_objects(enemies)
  _draw_objects(bombs)
  
