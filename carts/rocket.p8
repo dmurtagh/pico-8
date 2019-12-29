@@ -42,7 +42,8 @@ __lua__
 -------------------------------
 function _initmisc1()
  plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- goal={x=60,y=56,w=8,h=8,spr=3}
+ add(doors,{x=60,y=56,w=8,h=8,spr=3,destlevel=2})
+
 end
 
 function _initwalls1()
@@ -70,7 +71,7 @@ end
 ---------- Level 2 -----------
 function _initmisc2()
  plr={} plr.x=0 plr.y=120 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- goal={x=60,y=40,w=8,h=8,spr=3}
+ add(doors,{x=60,y=40,w=8,h=8,spr=3,destlevel=3})
 end
 
 function _initwalls2()
@@ -100,7 +101,7 @@ end
 ---------- Level 3 -----------
 function _initmisc3()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- goal={x=104,y=112,w=8,h=8,spr=3}
+ add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=4}) 
 end
 
 
@@ -148,6 +149,60 @@ function _initenemies3()
  _addwpenemy(92,40,{120,40,68,40})
 end
 
+---------- Level 4 -----------
+function _initmisc4()
+ plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=1})
+end
+
+function _initwalls4()
+ walls={}
+ add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ add(walls,{x=60,y=16,w=8,h=104,spr=1})
+end
+
+function _initbombs4()
+end
+
+function _initenemies4()
+ enemies={}
+ -- lhs
+ --[[
+ _addwpenemy(0,16,{0,16,52,16})
+ _addwpenemy(8,24,{0,24,52,24})
+ _addwpenemy(16,32,{0,32,52,32})
+ _addwpenemy(24,40,{0,40,52,40})
+ 
+ _addwpenemy(4,20,{0,20,52,60})
+ _addwpenemy(20,20,{52,20,0,60})
+ 
+ _addwpenemy(26,60,{0,40,52,80})
+ _addwpenemy(2,40,{52,40,0,80})
+ 
+ _addwpenemy(0,40,{0,40,52,80})
+ _addwpenemy(36,40,{52,40,0,80})
+ 
+ _addwpenemy(12,60,{0,60,52,100})
+ _addwpenemy(51,60,{52,60,0,100})
+ 
+ _addwpenemy(0,40,{0,40,52,40,52,80,0,80})
+ _addwpenemy(52,80,{52,80,0,80,0,40,52,40})
+ _addwpenemy(0,40,{0,40,0,80,52,80,52,40})
+ _addwpenemy(52,80,{52,80,52,40,0,40,0,80})
+ 
+ -- rhs
+ _addwpenemy(68,16,{68,16,120,16})
+ _addwpenemy(76,24,{68,24,120,24})
+ _addwpenemy(84,32,{68,32,120,32})
+ _addwpenemy(92,40,{68,40,120,40})
+ 
+ _addwpenemy(68,16,{120,16,68,16})
+ _addwpenemy(76,24,{120,24,68,24})
+ _addwpenemy(84,32,{120,32,68,32})
+ _addwpenemy(92,40,{120,40,68,40})
+ ]]--
+end
+
 -------------------------------
 function _initglobals()
  max_speed=1
@@ -161,20 +216,24 @@ function _initglobals()
 end
 
 function _reset()
- walls,bombs,enemies={},{},{}
+ walls,bombs,enemies,doors={},{},{},{}
+ 
  if (level==nil) level=1
  if level==1 then _initmisc1() _initwalls1() _initbombs1()
  elseif level==2 then _initmisc2() _initwalls2() _initbombs2()
  elseif level==3 then _initmisc3() _initwalls3() _initbombs3() _initenemies3()
+ elseif level==4 then _initmisc4() _initwalls4() _initbombs4() _initenemies4()
  end
 
  win=false
  dead=false
  actionupafterend=false
  inputfreezeafterdie=60
+ nextlevel=-1
 end
 
 function _init()
+ level=4
  _initglobals() 
  _reset()
 end
@@ -328,7 +387,9 @@ function _updateplayer()
  _collide(plr, walls)
  _collide(plr, bombs)
  
- if (_isrectoverlap(plr,goal)) win=true
+ for d in all(doors) do
+  if (_isrectoverlap(plr,d) and btn(2)) win=true nextlevel=d.destlevel
+ end
 end
 
 function _update60()
@@ -336,11 +397,16 @@ function _update60()
  _update_bombs()
  _updateenemies()
  
- if dead or win then
+ if win then
+  level=nextlevel
+  _reset()
+  return
+ end
+ 
+ if dead then
   inputfreezeafterdie-=1
   if (not btn(4)) actionupafterend = true
   if btn(4) and actionupafterend == true and inputfreezeafterdie<0 then
-   if (win) level=level%maxlevel+1
    _reset()
   end
  end
@@ -388,7 +454,11 @@ function _draw()
  end
  
  _draw_objects(walls)
- spr(goal.spr,goal.x,goal.y)
+ 
+ for d in all(doors) do
+  spr(d.spr,d.x,d.y)
+ end
+ 
  _draw_objects(enemies)
  _draw_objects(bombs)
  
@@ -398,9 +468,9 @@ function _draw()
  pal()
  
  if win then
-  rectfill(44,52,84,76,7)
-  print("YOU WIN",51,58,0)
-  print("[NEXT]",53,66,1)
+ -- rectfill(44,52,84,76,7)
+ -- print("YOU WIN",51,58,0)
+ -- print("[NEXT]",53,66,1)
  end
  
  if dead then
@@ -408,6 +478,9 @@ function _draw()
    --print("YOU DIED",49,58,0)
    --print("[RETRY]",51,66,1)
   end
+  
+  print("LVL "..level,36,0,7)
+  print("COINS 0",64,0,7)
 
 end -- fn
 ------------------------------
