@@ -39,23 +39,19 @@ __lua__
 
 -- 33 read or wait my dude by that tom hall
 -- (not on gruber level, but useful)
--------------------------------
-function _initmisc1()
+---------- Level 1 -----------
+function _initlevel1()
  plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=2})
  add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=4})
-end
-
-function _initwalls1()
+ 
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=40,y=40,w=8,h=24,spr=1})
  add(walls,{x=80,y=40,w=8,h=24,spr=1})
  add(walls,{x=40,y=64,w=48,h=8,spr=1})
  add(walls,{x=0,y=88,w=16,h=8,spr=1})
  add(walls,{x=8,y=96,w=8,h=16,spr=1})
-end
-
-function _initbombs1()
+ 
  _addbomb(8,112)
  for x=16,120,8 do
   for y=112,0,-8 do
@@ -69,18 +65,15 @@ function _initbombs1()
 end
 
 ---------- Level 2 -----------
-function _initmisc2()
+function _initlevel2()
  plr={} plr.x=0 plr.y=120 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=60,y=40,w=8,h=8,spr=3,destlevel=3})
-end
 
-function _initwalls2()
  add(walls,{x=16,y=120,w=128,h=8,spr=1})
  add(walls,{x=0,y=96,w=112,h=8,spr=1})
  add(walls,{x=0,y=48,w=112,h=8,spr=1})
-end
-
-function _initbombs2()
+ 
+ -- bombs
  _addbomb(8,120)
  for x=8,120,8 do
    _addbomb(x,112)
@@ -99,21 +92,13 @@ function _initbombs2()
 end
 
 ---------- Level 3 -----------
-function _initmisc3()
+function _initlevel3()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=4}) 
-end
-
-
-function _initwalls3()
+ 
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=60,y=16,w=8,h=104,spr=1})
-end
-
-function _initbombs3()
-end
-
-function _initenemies3()
+ 
  -- lhs
  _addwpenemy(0,16,{0,16,52,16})
  _addwpenemy(8,24,{0,24,52,24})
@@ -150,7 +135,7 @@ function _initenemies3()
 end
 
 ---------- Level 4 -----------
-function _initmisc4()
+function _initlevel4()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=120,y=32,w=8,h=8,spr=3,destlevel=1})
  add(doors,{x=120,y=0,w=8,h=8,spr=3,destlevel=5})
@@ -158,25 +143,16 @@ function _initmisc4()
  add(doors,{x=0,y=32,w=8,h=8,spr=3,destlevel=4,destdoor=3})
  
  add(spikes,{x=24,y=120,w=64,h=8,spr=58})
-end
 
-function _initwalls4()
  add(walls,{x=120,y=8,w=128,h=8,spr=1})
- add(walls,{x=0,y=88,w=120,h=8,spr=1})
+ add(walls,{x=0,y=88,w=112,h=8,spr=1})
  add(walls,{x=0,y=96,w=24,h=8,spr=1})
-end
 
-function _initbombs4()
  for x=0,120,8 do
   _addbomb(x,40)
  end
- 
- for x=24,120,8 do
-   -- _addbomb(x,120)
-  end
-end
 
-function _initenemies4()
+ -- enemies
  local y1=16
  local y2=24
  for x=0,120,16 do
@@ -199,18 +175,10 @@ function _initenemies4()
 end
 
 ---------- Level 5 -----------
-function _initmisc5()
+function _initlevel5()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(spikes,{x=24,y=120,w=64,h=8,spr=58})
-end
-
-function _initwalls5()
-end
-
-function _initbombs5()
-end
-
-function _initenemies5()
+ 
  local speed=0.1
  local delay=-60 -- frames
  _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
@@ -233,11 +201,11 @@ function _reset()
  walls,bombs,enemies,doors,spikes={},{},{},{},{}
  
  if (level==nil) level=1
- if level==1 then _initmisc1() _initwalls1() _initbombs1()
- elseif level==2 then _initmisc2() _initwalls2() _initbombs2()
- elseif level==3 then _initmisc3() _initwalls3() _initbombs3() _initenemies3()
- elseif level==4 then _initmisc4() _initwalls4() _initbombs4() _initenemies4()
- elseif level==5 then _initmisc5() _initwalls5() _initbombs5() _initenemies5()
+ if level==1 then _initlevel1()
+ elseif level==2 then _initlevel2()
+ elseif level==3 then _initlevel3()
+ elseif level==4 then _initlevel4()
+ elseif level==5 then _initlevel5()
  end
 
  win=false
@@ -252,7 +220,7 @@ function _reset()
 end
 
 function _init()
- level=4
+ level=1
  _initglobals() 
  _reset()
 end
