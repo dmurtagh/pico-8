@@ -45,12 +45,33 @@ function _initlevel1()
  add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=2})
  add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=4})
  
+ 
+ --CHEAT doors
+ add(doors,{x=24,y=112,w=8,h=8,spr=3,destlevel=2})
+ add(doors,{x=34,y=112,w=8,h=8,spr=3,destlevel=3})
+ add(doors,{x=44,y=112,w=8,h=8,spr=3,destlevel=4})
+ add(doors,{x=54,y=112,w=8,h=8,spr=3,destlevel=5})
+ add(doors,{x=64,y=112,w=8,h=8,spr=3,destlevel=6})
+ add(doors,{x=74,y=112,w=8,h=8,spr=3,destlevel=7})
+ add(doors,{x=84,y=112,w=8,h=8,spr=3,destlevel=8})
+ add(doors,{x=94,y=112,w=8,h=8,spr=3,destlevel=9})
+ add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=10})
+ 
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=40,y=40,w=8,h=24,spr=1})
  add(walls,{x=80,y=40,w=8,h=24,spr=1})
  add(walls,{x=40,y=64,w=48,h=8,spr=1})
  add(walls,{x=0,y=88,w=16,h=8,spr=1})
  add(walls,{x=8,y=96,w=8,h=16,spr=1})
+ 
+ for x=24,104,16 do
+  _addcoin(x,96)
+  _addcoin(x,16)
+ end
+ for y=32,88,16 do
+  _addcoin(24,y)
+  _addcoin(104,y)
+ end
  
  _addbomb(8,112)
  for x=16,120,8 do
@@ -76,25 +97,33 @@ function _initlevel2()
  -- bombs
  _addbomb(8,120)
  for x=8,120,8 do
-   _addbomb(x,112)
+  _addbomb(x,112)
+  _addcoin(x-8,104)
  end
  _addbomb(120,104)
  _addbomb(120,96)
  _addbomb(120,88)
+ _addcoin(112,96)
  for x=8,120,8 do
   _addbomb(x,80)
+  _addcoin(x-8,88)
  end
+ _addcoin(0,80)
+ _addcoin(0,72)
+ _addcoin(0,64)
+ _addcoin(0,56)
  _addbomb(8,72)
  _addbomb(16,72)
  for x=8,120,8 do
-   _addbomb(x,64)
-  end
+  _addbomb(x,64)
+  _addcoin(x,56)
+ end
 end
 
 ---------- Level 3 -----------
 function _initlevel3()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=4}) 
+ add(doors,{x=96,y=112,w=8,h=8,spr=3,destlevel=4}) 
  
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=60,y=16,w=8,h=104,spr=1})
@@ -132,6 +161,12 @@ function _initlevel3()
  _addwpenemy(76,24,{120,24,68,24})
  _addwpenemy(84,32,{120,32,68,32})
  _addwpenemy(92,40,{120,40,68,40})
+ 
+ for x=80,112,8 do
+  for y=64,96,8 do
+   _addcoin(x,y)
+  end
+ end
 end
 
 ---------- Level 4 -----------
@@ -147,6 +182,23 @@ function _initlevel4()
  add(walls,{x=120,y=8,w=128,h=8,spr=1})
  add(walls,{x=0,y=88,w=112,h=8,spr=1})
  add(walls,{x=0,y=96,w=24,h=8,spr=1})
+ 
+ _addcoin(0,56)
+ _addcoin(8,56)
+ _addcoin(16,64)
+ _addcoin(24,72)
+ _addcoin(32,72)
+ _addcoin(40,64)
+ _addcoin(48,56)
+ _addcoin(56,56)
+ _addcoin(64,64)
+ _addcoin(72,72)
+ _addcoin(80,73)
+ _addcoin(88,64)
+ _addcoin(96,56)
+ _addcoin(104,56)
+ _addcoin(112,64)
+ _addcoin(120,72)
 
  for x=0,120,8 do
   _addbomb(x,40)
@@ -193,12 +245,13 @@ function _initglobals()
  flameh = 5 -- flame height
  f_to_light = 20 -- 60 frames of flame to light bombs
  f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
- maxlevel=3
  inputfreeze=30
+ 
+ inventory={coins=0}
 end
 
 function _reset()
- walls,bombs,enemies,doors,spikes={},{},{},{},{}
+ walls,bombs,enemies,doors,spikes,coins={},{},{},{},{},{}
  
  if (level==nil) level=1
  if level==1 then _initlevel1()
@@ -220,7 +273,7 @@ function _reset()
 end
 
 function _init()
- level=1
+ level=4
  _initglobals() 
  _reset()
 end
@@ -232,6 +285,10 @@ end
 
 function _addbomb(x,y)
  add(bombs,{x=x,y=y,w=8,h=8,spr=153,ttl=-1,fcount=0,nfcount=0})
+end
+
+function _addcoin(x,y)
+ add(coins,{x=x,y=y,w=8,h=8,spr=66})
 end
 
 function _addwpenemy(x,y,wp,speed,doffset) -- waypoint enemy
@@ -372,6 +429,15 @@ function _dieoncollision(list)
  end
 end
 
+function _collectoncollision(list,typename)
+ for obj in all(list) do
+  if (_isrectoverlap(plr,obj) and not dead) then
+   del(list,obj)
+   inventory[typename]+=1
+  end
+ end
+end
+
 function _updateplayer()
  if win then return end
 
@@ -404,6 +470,8 @@ if (inputfreeze>=0) inputfreeze-=1
  _updateenemies()
  _dieoncollision(enemies)
  _dieoncollision(spikes)
+ 
+ _collectoncollision(coins,'coins')
  
  if win then
   level=nextlevel
@@ -457,13 +525,15 @@ function _draw()
  local c2=8+(((frame/5)+1)%2)
  cls ()
  
+ _draw_objects(coins)
+ _draw_objects(doors)
+ 
  if bst then
   spr(95,plr.x,plr.y+4)
  end
  
  _draw_objects(walls)
  _draw_objects(spikes)
- _draw_objects(doors)
  _draw_objects(enemies)
  _draw_objects(bombs)
  
@@ -485,7 +555,7 @@ function _draw()
   end
   
   print("LVL "..level,36,0,7)
-  print("COINS 0",64,0,7)
+  print("COINS "..inventory.coins,64,0,7)
 
 end -- fn
 ------------------------------
