@@ -246,12 +246,13 @@ function _initglobals()
  f_to_light = 20 -- 60 frames of flame to light bombs
  f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
  inputfreeze=30
- 
+ changedlevel=true
  inventory={coins=0}
 end
 
 function _reset()
- walls,bombs,enemies,doors,spikes,coins={},{},{},{},{},{}
+ walls,bombs,enemies,doors,spikes={},{},{},{},{}
+ if (changedlevel) coins={} -- Don't clear coins if going through a door but staying on the same level
  
  if (level==nil) level=1
  if level==1 then _initlevel1()
@@ -288,7 +289,9 @@ function _addbomb(x,y)
 end
 
 function _addcoin(x,y)
- add(coins,{x=x,y=y,w=8,h=8,spr=66})
+ if changedlevel then
+  add(coins,{x=x,y=y,w=8,h=8,spr=66})
+ end
 end
 
 function _addwpenemy(x,y,wp,speed,doffset) -- waypoint enemy
@@ -474,6 +477,7 @@ if (inputfreeze>=0) inputfreeze-=1
  _collectoncollision(coins,'coins')
  
  if win then
+  changedlevel=level~=nextlevel
   level=nextlevel
   _reset()
   return
@@ -483,6 +487,7 @@ if (inputfreeze>=0) inputfreeze-=1
   local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
   if (not btn_pressed) actionupafterend = true
   if btn_pressed and actionupafterend == true and inputfreeze<0 then
+   changedlevel=false
    _reset()
   end -- if btn_pressed
  end -- if dead
