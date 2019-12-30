@@ -267,7 +267,9 @@ function _initlevel6()
  add(sprites,{x=32,y=70,w=8,h=8,spr=95})
  add(sprites,{x=28,y=70,w=8,h=8,spr=96,oncollide=_buysiderockets})
  
- add(texts,{x=70,y=62,str='BLASTRON 5000',color=7})
+ --add(texts,{x=70,y=62,str='BLASTRON 5000',color=7})
+ add(texts,{x=70,y=62,str='A HAT',color=7})
+ add(sprites,{x=78,y=70,w=8,h=8,spr=190,oncollide=_buyhat})
 
 end
 
@@ -290,7 +292,7 @@ function _initglobals()
  inputfreeze=30
  changedlevel=true
  inventory={coins=0}
- costs={siderockets=2,blaster=4}
+ costs={siderockets=2,hat=2,blaster=4}
  paused=false
  modalstate={}
 end
@@ -404,7 +406,9 @@ end
 
 function _updatebombs()
  for b in all(bombs) do
-  if bottomrocket and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
+  if (bottomrocket and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh})) or
+     (inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(b,{x=plr.x-4,y=plr.y,w=4,h=plr.h})) or
+     (inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(b,{x=plr.x+plr.h,y=plr.y,w=4,h=plr.h})) then
    b.fcount+=1
    b.nfcount=0
    if (b.fcount>f_to_light and b.spr==153 and b.lit==nil) b.ttl=bomb_ttl b.lit=true
@@ -460,7 +464,7 @@ function _updateenemies()
     del(e.wp,targetx) del(e.wp,targety)
     add(e.wp,targetx) add(e.wp,targety)
    end
-   if _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) and not dead then
+   if _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) and not dead then -- ToDo: Does the rocket need to be firing here?
     e.dead=true
     e.pal1=3
     e.pal2=6
@@ -500,13 +504,8 @@ function _collectoncollision(list,typename)
 end
 
 function _buysiderockets()
- if inputfreeze>0 then
-  return
- end
- 
- if inventory.siderockets~=nil then
-  return
- end
+ if inputfreeze>0 then return end
+ if inventory.siderockets~=nil then return end
  paused=true
  
  if inventory.coins>=costs.siderockets then
@@ -514,7 +513,21 @@ function _buysiderockets()
   itemcost=costs.siderockets
   displaymodal("BUY FOR " .. costs.siderockets .. " COINS?",confirmbuy,cancelbuy)
  else
-  displaymodal("YOU NEED " .. costs.siderockets .. " COINS\nTO BUY THIS",nil,nil)
+  displaymodal("YOU NEED " .. costs.siderockets .. " COINS\nTO BUY COOL ROCKETS",nil,nil)
+ end
+end
+
+function _buyhat()
+ if inputfreeze>0 then return end
+ if inventory.hat~=nil then return end
+ paused=true
+ 
+ if inventory.coins>=costs.hat then
+  buyitem="hat"
+  itemcost=costs.hat
+  displaymodal("BUY FOR " .. costs.siderockets .. " COINS? (BUT\nWHAT DOES IT DO?!?)",confirmbuy,cancelbuy)
+ else
+  displaymodal("YOU NEED " .. costs.siderockets .. " COINS\nTO BUY THE HAT",nil,nil)
  end
 end
 
@@ -576,8 +589,10 @@ function _updateplayer()
  if (bottomrocket) plr.dy+=-0.075
  
  -- Should I add a buff if inventory.siderockets is active
- if (leftrocket) plr.dx+=0.05
- if (rightrocket) plr.dx-=0.05
+ local acc=0.05
+ if (inventory.siderockets) acc=0.65
+ if (leftrocket) plr.dx+=acc
+ if (rightrocket) plr.dx-=acc
  
  _applygravity(plr)
  
@@ -705,6 +720,12 @@ function _draw()
  if dead then pal(9,6) end
  spr(96,plr.x,plr.y)
  pal()
+ 
+ if inventory.hat!=nil then
+  pal(0)
+  spr(190,plr.x,plr.y)
+  pal()
+ end
  
  if win then
  -- rectfill(44,52,84,76,7)
