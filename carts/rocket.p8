@@ -43,7 +43,9 @@ __lua__
 function _initlevel1()
  plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=2})
- add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=4})
+ add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=6})
+ 
+ add(texts,{x=64,y=50,str='SHOP',color=7})
  
  
  --CHEAT doors
@@ -249,6 +251,23 @@ function _initlevel5()
 -- local delay=-60 -- frames
 -- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
 
+end
+
+---------- Level 6 (The Store) -----------
+
+function _initlevel6()
+ plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ add(doors,{x=0,y=112,w=8,h=8,spr=3,destlevel=1})
+ add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ 
+ add(texts,{x=10,y=30,str='WHAT WOULD YOU LIKE TO BUY?',color=7})
+ 
+ add(texts,{x=8,y=62,str='SIDE ROCKETS',color=7})
+ add(sprites,{x=24,y=70,w=8,h=8,spr=95})
+ add(sprites,{x=32,y=70,w=8,h=8,spr=95})
+ add(sprites,{x=28,y=70,w=8,h=8,spr=96,oncollide=_buysiderockets})
+ 
+ add(texts,{x=70,y=62,str='BLASTRON 5000',color=7})
 
 end
 
@@ -264,10 +283,13 @@ function _initglobals()
  inputfreeze=30
  changedlevel=true
  inventory={coins=0}
+ costs={siderockets=2,blaster=4}
+ paused=false
+ modalstate={}
 end
 
 function _reset()
- walls,bombs,enemies,doors,spikes={},{},{},{},{}
+ walls,bombs,enemies,doors,spikes,texts,sprites={},{},{},{},{},{},{}
  if (changedlevel) coins={} -- Don't clear coins if going through a door but staying on the same level
  
  if (level==nil) level=1
@@ -276,11 +298,12 @@ function _reset()
  elseif level==3 then _initlevel3()
  elseif level==4 then _initlevel4()
  elseif level==5 then _initlevel5()
+ elseif level==6 then _initlevel6()
  end
 
  win=false
  dead=false
- actionupafterend=false
+ requirenoinput=false
  nextlevel=-1
  
  if destdoor~=nil and #doors>=destdoor then
@@ -290,7 +313,7 @@ function _reset()
 end
 
 function _init()
- level=5
+ level=1
  _initglobals() 
  _reset()
 end
@@ -444,7 +467,7 @@ end --function
 
 function _dieoncollision(list)
  for obj in all(list) do
-  if (obj.dead==nil and _isrectoverlap(plr,obj) and not dead) dead=true inputfreeze=30
+  if (obj.dead==nil and _isrectoverlap(plr,obj) and not dead) dead=true requirenoinput=true inputfreeze=30
  end
 end
 
@@ -457,10 +480,78 @@ function _collectoncollision(list,typename)
  end
 end
 
+function _buysiderockets()
+ if inputfreeze>0 then
+  return
+ end
+ 
+ if inventory.siderockets==true then
+  return
+ end
+ paused=true
+ 
+ if inventory.coins>=costs.siderockets then
+  buyitem="siderockets"
+  itemcost=costs.siderockets
+  displaymodal("BUY FOR " .. costs.siderockets .. " COINS?",confirmbuy,cancelbuy)
+ else
+  displaymodal("YOU NEED " .. costs.siderockets .. " COINS\nTO BUY THIS",nil,nil)
+ end
+end
+
+function confirmbuy()
+ inventory[buyitem]=true
+ inventory.coins-=itemcost
+end
+
+function cancelbuy()
+ -- do we need to do anything here???
+end
+
+function displaymodal(msg,onconfirm,oncancel)
+ modalstate={
+  displaymessage=msg,
+  onconfirm=onconfirm,
+  oncancel=oncancel,
+  confirmselected=true
+ }
+ requirenoinput=true
+end
+
+function handlemodalinput()
+ if modalstate.displaymessage==nil then return end
+ if requirenoinput==true then return end
+  
+ if modalstate.onconfirm~=nil and modalstate.oncancel~=nil then
+  -- toggle between confirm and cancel
+  if btn(0) then 
+   modalstate.confirmselected=true
+  elseif btn(1) then 
+   modalstate.confirmselected=false
+  elseif btn(4) then
+   if modalstate.confirmselected then
+    modalstate.onconfirm()
+    modalstate.displaymessage=nil inputfreeze=30
+   else
+    modalstate.oncancel()
+    modalstate.displaymessage=nil inputfreeze=30
+   end -- modalstate.confirmselected
+  end -- elseif btn(4)
+ elseif modalstate.oncancel~=nil and btn(4) then
+  modalstate.oncancel()
+  modalstate.displaymessage=nil inputfreeze=30
+ elseif btn(4) then
+  if modalstate.onconfirm~=null then 
+   modalstate.onconfirm() 
+  end
+  modalstate.displaymessage=nil inputfreeze=30
+ end
+end
+
 function _updateplayer()
  if win then return end
 
- bst = btn(4) and not dead and inputfreeze<0
+ bst=btn(4) and not dead and inputfreeze<0
  if (bst) plr.dy+=-0.075
  if (btn(1) and not dead and inputfreeze<0) plr.dx+=0.05
  if (btn(0) and not dead and inputfreeze<0) plr.dx-=0.05
@@ -480,29 +571,46 @@ function _updateplayer()
  end
 end
 
+function _updatesprites()
+ for s in all(sprites) do
+  if _isrectoverlap(plr,s) and s.oncollide~=nil then
+   s.oncollide()
+  end
+ end
+end
+
 function _update60()
 
-if (inputfreeze>=0) inputfreeze-=1
+ if (inputfreeze>=0) inputfreeze-=1
+ 
+ local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
+ if (not btn_pressed) requirenoinput = false
+
+ if modalstate.displaymessage!=nil then
+  if inputfreeze<0 then 
+   handlemodalinput() 
+  end
+  return
+ end
 
  _updateplayer()
  _updatebombs()
  _updateenemies()
  _dieoncollision(enemies)
  _dieoncollision(spikes)
+ _updatesprites()
  
- _collectoncollision(coins,'coins')
+ if level!=6 then _collectoncollision(coins,'coins') end -- lvl 6 is the shop, don't process coins
  
  if win then
-  changedlevel=level~=nextlevel
+  changedlevel=level~=nextlevel and level~=6 and nextlevel~=6 -- 6 is the shop level. Don't renerate coins when entering the shop
   level=nextlevel
   _reset()
   return
  end
  
  if dead then
-  local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
-  if (not btn_pressed) actionupafterend = true
-  if btn_pressed and actionupafterend == true and inputfreeze<0 then
+  if btn_pressed and requirenoinput == false and inputfreeze<0 then
    changedlevel=false
    _reset()
   end -- if btn_pressed
@@ -546,7 +654,7 @@ function _draw()
  local c2=8+(((frame/5)+1)%2)
  cls ()
  
- _draw_objects(coins)
+ if level~=6 then _draw_objects(coins) end -- lvl 6 is the shop, don't display coins
  _draw_objects(doors)
  
  if bst then
@@ -555,6 +663,12 @@ function _draw()
  
  _draw_objects(walls)
  _draw_objects(spikes)
+ _draw_objects(sprites)
+ 
+ for text in all(texts) do
+  print(text.str,text.x,text.y,text.color)
+ end
+   
  _draw_objects(enemies)
  _draw_objects(bombs)
  
@@ -569,15 +683,26 @@ function _draw()
  -- print("[NEXT]",53,66,1)
  end
  
- if dead then
-   --rectfill(44,52,84,76,7)
-   --print("YOU DIED",49,58,0)
-   --print("[RETRY]",51,66,1)
-  end
+ if modalstate.displaymessage~=nil then
+   rectfill(20,50,108,80,7)
+   print(modalstate.displaymessage,24,54,0)
+ 
+   if modalstate.onconfirm~=nil and modalstate.oncancel~=nil then
+    if modalstate.confirmselected then
+     print("[OK]",30,70,0) print("CANCEL",70,70,0)
+    else
+     print("OK",30,70,0) print("[CANCEL]",70,70,0)
+    end
+   elseif modalstate.oncancel~=nil then
+    print("[CANCEL]",54,70,0)
+   else
+    print("[OK]",54,70,0)
+   end
+ end
   
-  rectfill(30,0,96,4,0)
-  print("LVL "..level,36,0,7)
-  print("COINS "..inventory.coins,64,0,7)
+ rectfill(30,0,96,4,0)
+ print("LVL "..level,36,0,7)
+ print("COINS "..inventory.coins,64,0,7)
 
 end -- fn
 ------------------------------
