@@ -229,11 +229,27 @@ end
 ---------- Level 5 -----------
 function _initlevel5()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(spikes,{x=24,y=120,w=64,h=8,spr=58})
+ add(doors,{x=0,y=20,w=8,h=8,spr=3,destlevel=1})
+ add(walls,{x=0,y=28,w=8,h=8,spr=1})
  
- local speed=0.1
- local delay=-60 -- frames
- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
+ add(spikes,{x=24,y=120,w=104,h=8,spr=58})
+ add(spikes,{x=0,y=92,w=104,h=8,spr=58})
+ add(spikes,{x=24,y=64,w=104,h=8,spr=58})
+ add(spikes,{x=0,y=36,w=104,h=8,spr=58})
+ add(spikes,{x=0,y=0,w=128,h=8,spr=58})
+ 
+ for x=10,120,12 do
+  _addcoin(x,106)
+  _addcoin(x,78)
+  _addcoin(x,50)
+  _addcoin(x,22)
+ end
+ 
+-- local speed=0.1
+-- local delay=-60 -- frames
+-- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
+
+
 end
 
 -------------------------------
@@ -274,7 +290,7 @@ function _reset()
 end
 
 function _init()
- level=4
+ level=5
  _initglobals() 
  _reset()
 end
@@ -559,6 +575,7 @@ function _draw()
    --print("[RETRY]",51,66,1)
   end
   
+  rectfill(30,0,96,4,0)
   print("LVL "..level,36,0,7)
   print("COINS "..inventory.coins,64,0,7)
 
