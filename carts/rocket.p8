@@ -271,6 +271,13 @@ function _initlevel6()
 
 end
 
+---------- Level 7 -----------
+
+function _initlevel7()
+ plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ _addwpenemy(0,16,{0,16,52,16})
+end
+
 -------------------------------
 function _initglobals()
  max_speed=1
@@ -299,6 +306,7 @@ function _reset()
  elseif level==4 then _initlevel4()
  elseif level==5 then _initlevel5()
  elseif level==6 then _initlevel6()
+ elseif level==7 then _initlevel7()
  end
 
  win=false
@@ -396,7 +404,7 @@ end
 
 function _updatebombs()
  for b in all(bombs) do
-  if bst and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
+  if bottomrocket and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) then
    b.fcount+=1
    b.nfcount=0
    if (b.fcount>f_to_light and b.spr==153 and b.lit==nil) b.ttl=bomb_ttl b.lit=true
@@ -432,23 +440,23 @@ function _updateenemies()
   if e.dead==nil then
    local speed=0.3 -- px/frame
    if (e.speed != nil) speed=e.speed
-   targetx=e.wp[1] targety=e.wp[2] gotonext=true
+   targetx=e.wp[1] targety=e.wp[2] gotonextwp=true
    
    if targetx<0 or (e.delay~=nil and e.delay>0) then -- targetx<0 represents a delay
     if (e.delay==nil) e.delay=-targetx
     e.delay-=1
-    gotonext=e.delay<0
+    gotonextwp=e.delay<0
    else
     e.delay=nil
     if abs(targetx-e.x)>speed then
-     e.flipx=sgn(targetx-e.x)==-1 e.x+=sgn(targetx-e.x)*speed gotonext=false
+     e.flipx=sgn(targetx-e.x)==-1 e.x+=sgn(targetx-e.x)*speed gotonextwp=false
     end
     if abs(targety-e.y)>speed then
-     e.y+=sgn(targety-e.y)*speed gotonext=false
+     e.y+=sgn(targety-e.y)*speed gotonextwp=false
     end
    end
    
-   if gotonext then
+   if gotonextwp then
     del(e.wp,targetx) del(e.wp,targety)
     add(e.wp,targetx) add(e.wp,targety)
    end
@@ -457,6 +465,17 @@ function _updateenemies()
     e.pal1=3
     e.pal2=6
    end
+   if inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(e,{x=plr.x-4,y=plr.y,w=4,h=plr.h})  then
+    e.dead=true
+    e.pal1=3
+    e.pal2=6
+   end
+   if inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(e,{x=plr.x+8,y=plr.y,w=4,h=plr.h})  then
+    e.dead=true
+    e.pal1=3
+    e.pal2=6
+   end
+     
   else
    _applygravity(e)
    _collide(e, walls)
@@ -485,7 +504,7 @@ function _buysiderockets()
   return
  end
  
- if inventory.siderockets==true then
+ if inventory.siderockets~=nil then
   return
  end
  paused=true
@@ -551,10 +570,14 @@ end
 function _updateplayer()
  if win then return end
 
- bst=btn(4) and not dead and inputfreeze<0
- if (bst) plr.dy+=-0.075
- if (btn(1) and not dead and inputfreeze<0) plr.dx+=0.05
- if (btn(0) and not dead and inputfreeze<0) plr.dx-=0.05
+ bottomrocket=btn(4) and not dead and inputfreeze<0
+ leftrocket=btn(1) and not dead and inputfreeze<0
+ rightrocket=btn(0) and not dead and inputfreeze<0
+ if (bottomrocket) plr.dy+=-0.075
+ 
+ -- Should I add a buff if inventory.siderockets is active
+ if (leftrocket) plr.dx+=0.05
+ if (rightrocket) plr.dx-=0.05
  
  _applygravity(plr)
  
@@ -657,8 +680,14 @@ function _draw()
  if level~=6 then _draw_objects(coins) end -- lvl 6 is the shop, don't display coins
  _draw_objects(doors)
  
- if bst then
+ if bottomrocket then
   spr(95,plr.x,plr.y+4)
+ end
+ if leftrocket and inventory.siderockets!=nil then
+  spr(95,plr.x-4,plr.y)
+ end
+ if rightrocket and inventory.siderockets!=nil then
+  spr(95,plr.x+4,plr.y)
  end
  
  _draw_objects(walls)
