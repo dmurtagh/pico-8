@@ -52,7 +52,6 @@ function _initlevel1()
  
  add(texts,{x=64,y=50,str='SHOP',color=7})
  
- 
  --CHEAT doors
  add(doors,{x=24,y=112,w=8,h=8,spr=3,destlevel=2})
  add(doors,{x=34,y=112,w=8,h=8,spr=3,destlevel=3})
@@ -65,11 +64,11 @@ function _initlevel1()
  add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=10})
  
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ add(walls,{x=0,y=88,w=16,h=8,spr=1})
+ add(walls,{x=8,y=96,w=8,h=16,spr=1})
  add(walls,{x=40,y=40,w=8,h=24,spr=1})
  add(walls,{x=80,y=40,w=8,h=24,spr=1})
  add(walls,{x=40,y=64,w=48,h=8,spr=1})
- add(walls,{x=0,y=88,w=16,h=8,spr=1})
- add(walls,{x=8,y=96,w=8,h=16,spr=1})
  
  for x=24,104,16 do
   _addcoin(x,96)
@@ -320,13 +319,30 @@ end
 
 ---------- Level 8 (One with a link to the Store) -----------
 
+function _initlevel8()
+ _initplr(0,112)
+ add(walls,{x=40,y=40,w=8,h=24,spr=1})
+ add(walls,{x=80,y=40,w=8,h=24,spr=1})
+ add(walls,{x=40,y=64,w=48,h=8,spr=1})
+ 
+ add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=9})
+ add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=kshoplvl}) -- The store
+ add(texts,{x=64,y=50,str='SHOP',color=7})
+ 
+end
+
 ---------- Level 9 (The Boss) -----------
+
+function _initlevel9()
+ _initplr(0,112)
+ 
+end
 
 ---------- Level 10 (The Store,kshoplvl) -----------
 
 function _initlevel10()
  _initplr(0,112)
- add(doors,{x=0,y=112,w=8,h=8,spr=3,destlevel=1})
+ add(doors,{x=0,y=112,w=8,h=8,spr=3,destlevel=previouslevel})
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  
  add(texts,{x=10,y=30,str='WHAT WOULD YOU LIKE TO BUY?',color=7})
@@ -346,7 +362,7 @@ end
 
 function _initlevel11()
  _initplr(0,0)
- add(doors,{x=120,y=120,w=8,h=8,spr=3,destlevel=2}) --??
+ add(doors,{x=120,y=120,w=8,h=8,spr=3,destlevel=previouslevel})
  add(walls,{x=0,y=8,w=8,h=8,spr=1})
  
  _addenemyconveyer(16,128)
@@ -398,6 +414,7 @@ function _initglobals()
  paused=false
  modalstate={}
  respawnpos=nil
+ previouslevel=1
 end
 
 function _reset()
@@ -438,7 +455,7 @@ function _reset()
 end
 
 function _init()
- level=7
+ level=8
  _initglobals() 
  --inventory={coins=0,siderockets=true}
  _reset()
@@ -758,6 +775,7 @@ function _update60()
  
  if win then
   changedlevel=level~=nextlevel and level~=kshoplvl and nextlevel~=kshoplvl -- kshoplvl is the shop level. Don't renerate coins when entering the shop
+  previouslevel=level
   level=nextlevel
   respawnpos=nil
   _reset()
