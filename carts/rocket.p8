@@ -279,9 +279,10 @@ function _initlevel7()
  
  add(spikes,{x=24,y=120,w=64,h=8,spr=58})
 
- add(walls,{x=120,y=8,w=128,h=8,spr=1})
+ add(walls,{x=120,y=8,w=8,h=16,spr=1})
  add(walls,{x=0,y=88,w=112,h=8,spr=1})
  add(walls,{x=0,y=96,w=24,h=8,spr=1})
+ add(walls,{x=0,y=40,w=128,h=8,spr=1})
  
  _addcoin(0,56)
  _addcoin(8,56)
@@ -300,12 +301,8 @@ function _initlevel7()
  _addcoin(112,64)
  _addcoin(120,72)
 
- for x=0,120,8 do
-  _addbomb(x,40)
- end
-
  -- enemies
- _addenemyconveyer(16)
+ _addenemyconveyer(16,112)
  
  local speed=0.1
  local delay=-120 -- frames (negative means delay)
@@ -352,15 +349,15 @@ function _initlevel11()
  add(doors,{x=120,y=120,w=8,h=8,spr=3,destlevel=2}) --??
  add(walls,{x=0,y=8,w=8,h=8,spr=1})
  
- _addenemyconveyer(16)
+ _addenemyconveyer(16,128)
  _addcoinrow(32)
- _addenemyconveyer(40)
+ _addenemyconveyer(40,128)
  _addcoinrow(56)
- _addenemyconveyer(64)
+ _addenemyconveyer(64,128)
  _addcoinrow(80)
- _addenemyconveyer(88)
+ _addenemyconveyer(88,128)
  _addcoinrow(104)
- _addenemyconveyer(112)
+ _addenemyconveyer(112,128)
 end
 
 ---------- Level Population Utility Functions -----------
@@ -375,12 +372,12 @@ function _addcoinrow(y)
  end
 end
 
-function _addenemyconveyer(y) -- ToDo, Add a max row for level 7
+function _addenemyconveyer(y,width) -- ToDo, Add a max row for level 7
  local y1=y
  local y2=y+8
- for x=0,120,16 do
-  _addwpenemy(x,y1,{0,y1,0,y2,120,y2,120,y1})
-  _addwpenemy(x+8,y2,{120,y2,120,y1,0,y1,0,y2})
+ for x=0,width,16 do
+  _addwpenemy(x,y1,{0,y1,0,y2,width,y2,width,y1})
+  _addwpenemy(x+8,y2,{width,y2,width,y1,0,y1,0,y2})
  end
 end
 
@@ -400,6 +397,7 @@ function _initglobals()
  costs={siderockets=2,hat=2,blaster=4}
  paused=false
  modalstate={}
+ respawnpos=nil
 end
 
 function _reset()
@@ -425,14 +423,22 @@ function _reset()
  requirenoinput=false
  nextlevel=-1
  
- if destdoor~=nil and #doors>=destdoor then
+ if respawnpos~=nil then
+  printh("respawnpos~=nil: ("..respawnpos.x..","..respawnpos.y..")")
+  plr.x=respawnpos.x plr.y=respawnpos.y
+ elseif destdoor~=nil and #doors>=destdoor then
   plr.x=doors[destdoor].x plr.y=doors[destdoor].y
+  printh("destdoor~=nil: ("..plr.x..","..plr.y..")")
   destdoor=nil
+  respawnpos={x=plr.x,y=plr.y}
+ else
+  printh("respawnpos=nil")
+  respawnpos=nil
  end
 end
 
 function _init()
- level=1
+ level=7
  _initglobals() 
  --inventory={coins=0,siderockets=true}
  _reset()
@@ -753,6 +759,7 @@ function _update60()
  if win then
   changedlevel=level~=nextlevel and level~=kshoplvl and nextlevel~=kshoplvl -- kshoplvl is the shop level. Don't renerate coins when entering the shop
   level=nextlevel
+  respawnpos=nil
   _reset()
   return
  end
