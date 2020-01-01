@@ -43,6 +43,8 @@ __lua__
 ---------- Some Constants -----------
 
 kshoplvl=10
+kbossrocketspeed=1 -- should be 0.05
+kbossskullspeed=2 -- should be 0.3
 
 ---------- Level 1 Intro the Bombs -----------
 function _initlevel1()
@@ -336,6 +338,27 @@ end
 function _initlevel9()
  _initplr(0,112)
  
+ add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ add(walls,{x=0,y=0,w=128,h=8,spr=1})
+ 
+ local bossrocket1={x=52,y=72,w=8,h=8,spr=73}
+ local bossrocket2={x=68,y=72,w=8,h=8,spr=73}
+ bossrockets={bossrocket1,bossrocket2} -- store these as a global for collision detection later
+ add(sprites,bossrocket1)
+ add(sprites,bossrocket2)
+ 
+ add(sprites,{x=52,y=64,w=8,h=8,spr=119})
+ add(sprites,{x=60,y=64,w=8,h=8,spr=120})
+ add(sprites,{x=68,y=64,w=8,h=8,spr=121})
+ add(sprites,{x=52,y=72,w=8,h=8,spr=143})
+ add(sprites,{x=68,y=72,w=8,h=8,spr=143})
+ 
+ add(bosses,{x=52,y=64,w=24,h=16})
+ 
+ -- ToDo: Would be cool to have a delay before this animation
+ add(sprites,{x=60,y=112,w=8,h=8,spr=117,target={x=60,y=72},speed=kbossskullspeed,ondone=_startboss}) -- skull
+ inputfreeze=1000
+ 
 end
 
 ---------- Level 10 (The Store,kshoplvl) -----------
@@ -344,6 +367,7 @@ function _initlevel10()
  _initplr(0,112)
  add(doors,{x=0,y=112,w=8,h=8,spr=3,destlevel=previouslevel})
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
+ add(walls,{x=0,y=0,w=128,h=8,spr=1})
  
  add(texts,{x=10,y=30,str='WHAT WOULD YOU LIKE TO BUY?',color=7})
  
@@ -355,7 +379,6 @@ function _initlevel10()
  --add(texts,{x=70,y=62,str='BLASTRON 5000',color=7})
  add(texts,{x=70,y=62,str='A HAT',color=7})
  add(sprites,{x=78,y=70,w=8,h=8,spr=190,oncollide=_buyhat})
-
 end
 
 ---------- Level 11 The Fun Level -----------
@@ -376,7 +399,7 @@ function _initlevel11()
  _addenemyconveyer(112,128)
 end
 
----------- Level Population Utility Functions -----------
+---------- Populate Level Utility Functions -----------
 
 function _initplr(x,y)
  plr={} plr.x=x plr.y=y plr.dx=0 plr.dy=0 plr.w=8 plr.h=8 -- Todo: I tried to make plr.w 7.95 but it interfered with the mechanics of level 2 
@@ -418,7 +441,7 @@ function _initglobals()
 end
 
 function _reset()
- walls,bombs,enemies,doors,spikes,texts,sprites={},{},{},{},{},{},{}
+ walls,bombs,enemies,doors,spikes,texts,sprites,bosses={},{},{},{},{},{},{},{}
  if (changedlevel) coins={} -- Don't clear coins if going through a door but staying on the same level
  
  if (level==nil) level=1
@@ -439,23 +462,21 @@ function _reset()
  dead=false
  requirenoinput=false
  nextlevel=-1
+ bossstate=nil
  
  if respawnpos~=nil then
-  printh("respawnpos~=nil: ("..respawnpos.x..","..respawnpos.y..")")
   plr.x=respawnpos.x plr.y=respawnpos.y
  elseif destdoor~=nil and #doors>=destdoor then
   plr.x=doors[destdoor].x plr.y=doors[destdoor].y
-  printh("destdoor~=nil: ("..plr.x..","..plr.y..")")
   destdoor=nil
   respawnpos={x=plr.x,y=plr.y}
  else
-  printh("respawnpos=nil")
   respawnpos=nil
  end
 end
 
 function _init()
- level=8
+ level=9
  _initglobals() 
  --inventory={coins=0,siderockets=true}
  _reset()
@@ -497,6 +518,115 @@ end
 function _isvcollide(o1,o2) -- is vertical collision or horizontal most important
  local x5,y5,x6,y6=_rectoverlap(o1,o2)
  return y6-y5<x6-x5
+end
+
+----- Boss Functions --------
+
+function _startboss()
+ -- Lower the rockets
+ sprites[1].target={x=52,y=78}
+ sprites[1].speed=kbossrocketspeed
+ sprites[1].ondone=_onrocketsdone
+ 
+ sprites[2].target={x=68,y=78}
+ sprites[2].speed=kbossrocketspeed
+ sprites[2].ondone=_onrocketintrodone
+end
+
+function _onrocketintrodone()
+ inputfreeze=0
+ bossstate={}
+ bossstate.target={x=0,y=8}
+ bossstate.speed=0.5
+ bossstate.mode=1 -- 1=fly on screeen top, drop wasps
+ bossstate.health=1
+end
+
+function _moveboss(x,y,rocketson)
+ -- Assuming the boss and sprites exist
+ local boss=bosses[1] 
+ boss.x=x boss.y=y
+ 
+ sprites[1].x=x
+ sprites[2].x=x+16
+ if rocketson then
+  sprites[1].y=y+13
+  sprites[2].y=y+13
+ else
+  sprites[1].y=y+8
+  sprites[2].y=y+8
+ end
+ 
+ local offsets={0,0, 8,0, 16,0, 0,8, 16,8, 8,8}
+ for i=0,5,1 do
+  sprites[i+3].x=x+offsets[i*2+1]
+  sprites[i+3].y=y+offsets[i*2+2]
+ end
+end
+
+function _updateboss()
+ local boss=bosses[1]
+ if boss==nil or bossstate==nil then return end
+ local moved=_lerpboss(boss,bossstate.target,bossstate.speed)
+ if not moved then
+  bossstate.target=nil -- Need to compute the next target
+ end
+ 
+ if (bossstate.mode==1) then _updateboss1(boss) end
+end
+
+kbosswaspdelay=60
+kbosswaspchance=0.7
+
+function _updateboss1(boss) -- state 1 update
+ if bossstate.nextwaspdelay==nil then
+  bossstate.nextwaspdelay=kbosswaspdelay
+ else
+  bossstate.nextwaspdelay-=1
+  if bossstate.nextwaspdelay<0 then
+   bossstate.nextwaspdelay=kbosswaspdelay
+   if rnd(1)<kbosswaspchance then
+    _bossspawnwasp(boss)
+   end
+  end
+ end
+ 
+ -- Hover over and back at the top of the screen
+ if bossstate.target==nil then
+  local r1=rnd(30)
+  r1=flr((r1*r1)/30) -- weight it towards the lower end
+  if boss.x<64 then
+   bossstate.target={x=96-r1,y=8}
+  else
+   bossstate.target={x=r1,y=8}
+  end
+ end
+end
+
+function _lerpboss(boss,target,speed) -- could make this more general if I had time
+ if target==nil then return end
+ local moved=false
+ local newx=boss.x
+ local newy=boss.y
+ if abs(target.x-boss.x)>speed then
+  newx=boss.x+sgn(target.x-boss.x)*speed
+  moved=true
+ end
+ if abs(target.y-boss.y)>speed then
+  newy=boss.y+sgn(target.y-boss.y)*speed 
+  moved=true
+ end
+ 
+ _moveboss(newx,newy,newy<boss.y or (newy==boss.y and newx!=boss.x))
+ return moved
+end
+
+function _bossspawnwasp(boss)
+ local x=flr(boss.x+8)
+ local y=flr(boss.y+16)
+ local r1=flr(rnd(30))
+ local r2=flr(rnd(30))
+ _addwpenemy(x,boss.y+16,{x,40+r1,x,82+r2})
 end
 
 -------------------------------
@@ -622,6 +752,7 @@ function _updateenemies()
 end --function
 
 function _dieoncollision(list,safety)
+ if list==nil then return end
  for obj in all(list) do
   if (obj.dead==nil and _isrectoverlap(plr,{x=obj.x+safety,y=obj.y+safety,w=obj.w-(safety*2),h=obj.h-(safety*2)}) and not dead) dead=true requirenoinput=true inputfreeze=30
  end
@@ -635,6 +766,107 @@ function _collectoncollision(list,typename)
   end
  end
 end
+
+function _updateplayer()
+ if win then return end
+
+ bottomrocket=btn(4) and not dead and inputfreeze<0
+ leftrocket=btn(1) and not dead and inputfreeze<0
+ rightrocket=btn(0) and not dead and inputfreeze<0
+ if (bottomrocket) plr.dy+=-0.075
+ 
+ -- Should I add a buff if inventory.siderockets is active
+ local acc=0.05
+ if (inventory.siderockets) acc=0.65
+ if (leftrocket) plr.dx+=acc
+ if (rightrocket) plr.dx-=acc
+ 
+ _applygravity(plr)
+ 
+ _collide(plr,walls)
+ _collide(plr,bombs)
+ _collide(plr,spikes)
+ 
+ for d in all(doors) do
+  if _isrectoverlap(plr,d) and btn(2) and inputfreeze<0 and not dead then
+   win=true nextlevel=d.destlevel
+   inputfreeze=15
+   if (d.destdoor~=nil) destdoor=d.destdoor
+  end
+ end
+end
+
+function _updatesprites()
+ for s in all(sprites) do
+  if _isrectoverlap(plr,s) and s.oncollide~=nil then
+   s.oncollide()
+  end
+  
+  if s.target~=nil then
+   -- ToDo: Maybe this could go in a LERP function because it's similar to how enemies are moved
+   local done=true
+   if abs(s.target.x-s.x)>s.speed then
+    s.x+=sgn(s.target.x-s.x)*s.speed done=false
+   end
+   if abs(s.target.y-s.y)>s.speed then
+    s.y+=sgn(s.target.y-s.y)*s.speed done=false
+   end
+  
+   if done then
+    s.target=nil
+    if s.ondone~=nil then
+     s.ondone()
+    end
+   end 
+   
+  end -- if s.target~=nil
+ end -- for loop
+end -- function
+
+function _update60()
+ if (inputfreeze>=0) inputfreeze-=1
+ 
+ local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
+ if (not btn_pressed) requirenoinput = false
+
+ if modalstate.displaymessage!=nil then
+  if inputfreeze<0 then 
+   handlemodalinput() 
+  end
+  return
+ end
+
+ _updateplayer()
+ _updatebombs()
+ _updateenemies()
+ _dieoncollision(enemies,0.05) -- 0.05 safety buffer
+ _dieoncollision(spikes,0)
+ _dieoncollision(bosses,0) -- ToDo: Should this just push the player back like a wall?
+ _dieoncollision(bossrockets,0)
+ 
+ _updatesprites()
+ _updateboss()
+ 
+ if level!=kshoplvl then _collectoncollision(coins,'coins') end -- kshoplvl is the shop, don't process coins
+ 
+ if win then
+  changedlevel=level~=nextlevel and level~=kshoplvl and nextlevel~=kshoplvl -- kshoplvl is the shop level. Don't renerate coins when entering the shop
+  previouslevel=level
+  level=nextlevel
+  respawnpos=nil
+  _reset()
+  return
+ end
+ 
+ if dead then
+  if btn_pressed and requirenoinput == false and inputfreeze<0 then
+   changedlevel=false
+   _reset()
+  end -- if btn_pressed
+ end -- if dead
+end -- fn
+
+-------- UI Functions ---------
 
 function _buysiderockets()
  if inputfreeze>0 then return end
@@ -712,84 +944,6 @@ function handlemodalinput()
   modalstate.displaymessage=nil inputfreeze=30
  end
 end
-
-function _updateplayer()
- if win then return end
-
- bottomrocket=btn(4) and not dead and inputfreeze<0
- leftrocket=btn(1) and not dead and inputfreeze<0
- rightrocket=btn(0) and not dead and inputfreeze<0
- if (bottomrocket) plr.dy+=-0.075
- 
- -- Should I add a buff if inventory.siderockets is active
- local acc=0.05
- if (inventory.siderockets) acc=0.65
- if (leftrocket) plr.dx+=acc
- if (rightrocket) plr.dx-=acc
- 
- _applygravity(plr)
- 
- _collide(plr,walls)
- _collide(plr,bombs)
- _collide(plr,spikes)
- 
- for d in all(doors) do
-  if _isrectoverlap(plr,d) and btn(2) and inputfreeze<0 and not dead then
-   win=true nextlevel=d.destlevel
-   inputfreeze=15
-   if (d.destdoor~=nil) destdoor=d.destdoor
-  end
- end
-end
-
-function _updatesprites()
- for s in all(sprites) do
-  if _isrectoverlap(plr,s) and s.oncollide~=nil then
-   s.oncollide()
-  end
- end
-end
-
-function _update60()
-
- if (inputfreeze>=0) inputfreeze-=1
- 
- local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
- if (not btn_pressed) requirenoinput = false
-
- if modalstate.displaymessage!=nil then
-  if inputfreeze<0 then 
-   handlemodalinput() 
-  end
-  return
- end
-
- _updateplayer()
- _updatebombs()
- _updateenemies()
- _dieoncollision(enemies,0.05) -- 0.05 safety buffer
- _dieoncollision(spikes,0)
- _updatesprites()
- 
- if level!=kshoplvl then _collectoncollision(coins,'coins') end -- kshoplvl is the shop, don't process coins
- 
- if win then
-  changedlevel=level~=nextlevel and level~=kshoplvl and nextlevel~=kshoplvl -- kshoplvl is the shop level. Don't renerate coins when entering the shop
-  previouslevel=level
-  level=nextlevel
-  respawnpos=nil
-  _reset()
-  return
- end
- 
- if dead then
-  if btn_pressed and requirenoinput == false and inputfreeze<0 then
-   changedlevel=false
-   _reset()
-  end -- if btn_pressed
- end -- if dead
-end -- fn
-
 
 -->8
 --draw tab
