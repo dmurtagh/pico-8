@@ -39,11 +39,16 @@ __lua__
 
 -- 33 read or wait my dude by that tom hall
 -- (not on gruber level, but useful)
----------- Level 1 -----------
+
+---------- Some Constants -----------
+
+kshoplvl=10
+
+---------- Level 1 Intro the Bombs -----------
 function _initlevel1()
- plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ _initplr(0,112)
  add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=2})
- add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=10}) -- The store
+ add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=kshoplvl}) -- The store
  
  add(texts,{x=64,y=50,str='SHOP',color=7})
  
@@ -87,10 +92,10 @@ function _initlevel1()
  end
 end
 
----------- Level 2 -----------
+---------- Level 2 The Bomb Chase -----------
 function _initlevel2()
- plr={} plr.x=0 plr.y=120 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=32,y=40,w=8,h=8,spr=3,destlevel=3})
+ _initplr(0,120)
+ add(doors,{x=32,y=40,w=8,h=8,spr=3,destlevel=4})
  add(doors,{x=32,y=24,w=8,h=8,spr=3,destlevel=11}) -- Bonus coin level
 
  add(walls,{x=16,y=120,w=128,h=8,spr=1})
@@ -137,10 +142,88 @@ function _initlevel2()
 
 end
 
----------- Level 3 -----------
-function _initlevel3()
- plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=96,y=112,w=8,h=8,spr=3,destlevel=4}) 
+---------- Level 3 Intro the spikies -----------
+
+---------- Level 4 The Spiky Gauntlet -----------
+function _initlevel4()
+ _initplr(0,112)
+ add(doors,{x=0,y=20,w=8,h=8,spr=3,destlevel=5})
+ add(walls,{x=0,y=28,w=8,h=8,spr=1})
+ 
+ add(spikes,{x=24,y=120,w=104,h=8,spr=58})
+ add(spikes,{x=0,y=92,w=104,h=8,spr=58})
+ add(spikes,{x=24,y=64,w=104,h=8,spr=58})
+ add(spikes,{x=0,y=36,w=104,h=8,spr=58})
+ add(spikes,{x=0,y=0,w=128,h=8,spr=58})
+ 
+ for x=10,120,12 do
+  _addcoin(x,106)
+  _addcoin(x,78)
+  _addcoin(x,50)
+  _addcoin(x,22)
+ end
+ 
+-- local speed=0.1
+-- local delay=-60 -- frames
+-- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
+
+end
+
+---------- Level 5 Intro the Flying Nasties -----------
+
+function _initlevel5()
+ _initplr(0,0)
+ add(doors,{x=56,y=80,w=8,h=8,spr=3,destlevel=6})
+ 
+ add(walls,{x=0,y=24,w=104,h=8,spr=1})
+ _add2ptenemy(32,16,0,-16)
+ _add2ptenemy(64,0,0,16)
+ 
+ add(walls,{x=96,y=32,w=8,h=72,spr=1})
+ _add2ptenemy(104,32,16,0)
+ _add2ptenemy(104,48,16,0)
+ _add2ptenemy(104,64,16,0)
+ _add2ptenemy(104,80,16,0)
+ _add2ptenemy(104,96,16,0)
+ 
+ add(walls,{x=24,y=88,w=80,h=8,spr=1})
+ add(walls,{x=32,y=96,w=8,h=8,spr=1})
+ add(walls,{x=48,y=96,w=8,h=8,spr=1})
+ add(walls,{x=64,y=96,w=8,h=8,spr=1})
+ add(walls,{x=80,y=96,w=8,h=8,spr=1})
+ 
+ _add2ptenemy(24,120,0,-24)
+ _add2ptenemy(40,96,0,24)
+ _add2ptenemy(56,120,0,-24)
+ _add2ptenemy(72,96,0,24)
+ _add2ptenemy(88,120,0,-24)
+ 
+ add(walls,{x=16,y=56,w=8,h=48,spr=1})
+ _add2ptenemy(8,56,0,48)
+ _add2ptenemy(0,104,0,-48)
+ 
+ add(walls,{x=24,y=56,w=40,h=8,spr=1})
+ _add2ptenemy(88,32,-88,0)
+ 
+ _addwpenemy(0,40,{0,40,88,40})
+ _addwpenemy(16,40,{0,40,88,40})
+ _addwpenemy(32,40,{0,40,88,40})
+ _addwpenemy(48,40,{0,40,88,40})
+ _addwpenemy(64,40,{0,40,88,40})
+ _add2ptenemy(88,48,-88,0)
+ _addwpenemy(88,48,{88,48,0,48})
+ _addwpenemy(72,48,{88,48,0,48})
+ _addwpenemy(72,48,{0,48,88,48})
+end
+
+function _add2ptenemy(x,y,w,h)
+ _addwpenemy(x,y,{x,y,x+w,y+h})
+end
+
+---------- Level 6 Loadza Flying Nasties -----------
+function _initlevel6()
+ _initplr(0,112)
+ add(doors,{x=96,y=112,w=8,h=8,spr=3,destlevel=7}) 
  
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=60,y=16,w=8,h=104,spr=1})
@@ -186,13 +269,13 @@ function _initlevel3()
  end
 end
 
----------- Level 4 -----------
-function _initlevel4()
- plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+---------- Level 7 (Fly Gauntlet) -----------
+function _initlevel7()
+ _initplr(0,112)
  add(doors,{x=120,y=32,w=8,h=8,spr=3,destlevel=1})
- add(doors,{x=120,y=0,w=8,h=8,spr=3,destlevel=5})
- add(doors,{x=8,y=80,w=8,h=8,spr=3,destlevel=4,destdoor=4})
- add(doors,{x=0,y=32,w=8,h=8,spr=3,destlevel=4,destdoor=3})
+ add(doors,{x=120,y=0,w=8,h=8,spr=3,destlevel=8})
+ add(doors,{x=8,y=80,w=8,h=8,spr=3,destlevel=7,destdoor=4})
+ add(doors,{x=0,y=32,w=8,h=8,spr=3,destlevel=7,destdoor=3})
  
  add(spikes,{x=24,y=120,w=64,h=8,spr=58})
 
@@ -238,35 +321,14 @@ function _initlevel4()
  end
 end
 
----------- Level 5 -----------
-function _initlevel5()
- plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=0,y=20,w=8,h=8,spr=3,destlevel=1})
- add(walls,{x=0,y=28,w=8,h=8,spr=1})
- 
- add(spikes,{x=24,y=120,w=104,h=8,spr=58})
- add(spikes,{x=0,y=92,w=104,h=8,spr=58})
- add(spikes,{x=24,y=64,w=104,h=8,spr=58})
- add(spikes,{x=0,y=36,w=104,h=8,spr=58})
- add(spikes,{x=0,y=0,w=128,h=8,spr=58})
- 
- for x=10,120,12 do
-  _addcoin(x,106)
-  _addcoin(x,78)
-  _addcoin(x,50)
-  _addcoin(x,22)
- end
- 
--- local speed=0.1
--- local delay=-60 -- frames
--- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
+---------- Level 8 (One with a link to the Store) -----------
 
-end
+---------- Level 9 (The Boss) -----------
 
----------- Level 10 (The Store) -----------
+---------- Level 10 (The Store,kshoplvl) -----------
 
 function _initlevel10()
- plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ _initplr(0,112)
  add(doors,{x=0,y=112,w=8,h=8,spr=3,destlevel=1})
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  
@@ -286,7 +348,7 @@ end
 ---------- Level 11 The Fun Level -----------
 
 function _initlevel11()
- plr={} plr.x=0 plr.y=0 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ _initplr(0,0)
  add(doors,{x=120,y=120,w=8,h=8,spr=3,destlevel=2}) --??
  add(walls,{x=0,y=8,w=8,h=8,spr=1})
  
@@ -302,13 +364,18 @@ function _initlevel11()
 end
 
 ---------- Level Population Utility Functions -----------
+
+function _initplr(x,y)
+ plr={} plr.x=x plr.y=y plr.dx=0 plr.dy=0 plr.w=8 plr.h=8 -- Todo: I tried to make plr.w 7.95 but it interfered with the mechanics of level 2 
+end
+
 function _addcoinrow(y)
  for x=0,120,8 do
   _addcoin(x,y)
  end
 end
 
-function _addenemyconveyer(y)
+function _addenemyconveyer(y) -- ToDo, Add a max row for level 7
  local y1=y
  local y2=y+8
  for x=0,120,16 do
@@ -324,6 +391,7 @@ function _initglobals()
  bomb_ttl=0.6
  blast_ext=2 -- n pixels
  flameh = 5 -- flame height
+ flamew = 8 -- flame height
  f_to_light = 20 -- 60 frames of flame to light bombs
  f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
  inputfreeze=30
@@ -364,8 +432,9 @@ function _reset()
 end
 
 function _init()
- level=2
+ level=1
  _initglobals() 
+ --inventory={coins=0,siderockets=true}
  _reset()
 end
 
@@ -447,7 +516,7 @@ end
 
 function _updatebombs()
  for b in all(bombs) do
-  if (bottomrocket and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh})) or
+  if (bottomrocket and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=flamew,h=flameh})) or
      (inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(b,{x=plr.x-4,y=plr.y,w=4,h=plr.h})) or
      (inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(b,{x=plr.x+plr.h,y=plr.y,w=4,h=plr.h})) then
    b.fcount+=1
@@ -505,17 +574,17 @@ function _updateenemies()
     del(e.wp,targetx) del(e.wp,targety)
     add(e.wp,targetx) add(e.wp,targety)
    end
-   if _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=plr.w,h=flameh}) and not dead then -- ToDo: Does the rocket need to be firing here?
+   if not dead and _isrectoverlap(e,{x=plr.x,y=plr.y+plr.h,w=flamew-0.01,h=flameh}) then -- and bottomrocket ToDo: Does the rocket need to be firing here? What's better
     e.dead=true
     e.pal1=3
     e.pal2=6
    end
-   if inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(e,{x=plr.x-4,y=plr.y,w=4,h=plr.h})  then
+   if inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(e,{x=plr.x-4,y=plr.y+0.5,w=3.5,h=plr.h-1})  then
     e.dead=true
     e.pal1=3
     e.pal2=6
    end
-   if inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(e,{x=plr.x+8,y=plr.y,w=4,h=plr.h})  then
+   if inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(e,{x=plr.x+8.5,y=plr.y+0.5,w=3.5,h=plr.h-1})  then
     e.dead=true
     e.pal1=3
     e.pal2=6
@@ -529,9 +598,9 @@ function _updateenemies()
  end --for
 end --function
 
-function _dieoncollision(list)
+function _dieoncollision(list,safety)
  for obj in all(list) do
-  if (obj.dead==nil and _isrectoverlap(plr,obj) and not dead) dead=true requirenoinput=true inputfreeze=30
+  if (obj.dead==nil and _isrectoverlap(plr,{x=obj.x+safety,y=obj.y+safety,w=obj.w-(safety*2),h=obj.h-(safety*2)}) and not dead) dead=true requirenoinput=true inputfreeze=30
  end
 end
 
@@ -675,14 +744,14 @@ function _update60()
  _updateplayer()
  _updatebombs()
  _updateenemies()
- _dieoncollision(enemies)
- _dieoncollision(spikes)
+ _dieoncollision(enemies,0.05) -- 0.05 safety buffer
+ _dieoncollision(spikes,0)
  _updatesprites()
  
- if level!=6 then _collectoncollision(coins,'coins') end -- lvl 6 is the shop, don't process coins
+ if level!=kshoplvl then _collectoncollision(coins,'coins') end -- kshoplvl is the shop, don't process coins
  
  if win then
-  changedlevel=level~=nextlevel and level~=6 and nextlevel~=6 -- 6 is the shop level. Don't renerate coins when entering the shop
+  changedlevel=level~=nextlevel and level~=kshoplvl and nextlevel~=kshoplvl -- kshoplvl is the shop level. Don't renerate coins when entering the shop
   level=nextlevel
   _reset()
   return
@@ -733,7 +802,7 @@ function _draw()
  local c2=8+(((frame/5)+1)%2)
  cls ()
  
- if level~=6 then _draw_objects(coins) end -- lvl 6 is the shop, don't display coins
+ if level~=kshoplvl then _draw_objects(coins) end
  _draw_objects(doors)
  
  if bottomrocket then
