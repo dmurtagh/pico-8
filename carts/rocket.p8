@@ -43,7 +43,7 @@ __lua__
 function _initlevel1()
  plr={} plr.x=0 plr.y=116 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=2})
- add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=6})
+ add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=10}) -- The store
  
  add(texts,{x=64,y=50,str='SHOP',color=7})
  
@@ -90,36 +90,51 @@ end
 ---------- Level 2 -----------
 function _initlevel2()
  plr={} plr.x=0 plr.y=120 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- add(doors,{x=60,y=40,w=8,h=8,spr=3,destlevel=3})
+ add(doors,{x=32,y=40,w=8,h=8,spr=3,destlevel=3})
+ add(doors,{x=32,y=24,w=8,h=8,spr=3,destlevel=11}) -- Bonus coin level
 
  add(walls,{x=16,y=120,w=128,h=8,spr=1})
  add(walls,{x=0,y=96,w=112,h=8,spr=1})
  add(walls,{x=0,y=48,w=112,h=8,spr=1})
+ add(walls,{x=0,y=16,w=128,h=8,spr=1})
  
  -- bombs
  _addbomb(8,120)
+ 
  for x=8,120,8 do
   _addbomb(x,112)
   _addcoin(x-8,104)
  end
+ 
  _addbomb(120,104)
  _addbomb(120,96)
  _addbomb(120,88)
  _addcoin(112,96)
+ 
  for x=8,120,8 do
   _addbomb(x,80)
   _addcoin(x-8,88)
  end
+ 
  _addcoin(0,80)
  _addcoin(0,72)
  _addcoin(0,64)
- _addcoin(0,56)
  _addbomb(8,72)
  _addbomb(16,72)
+ 
  for x=8,120,8 do
   _addbomb(x,64)
-  _addcoin(x,56)
+  _addcoin(x-8,56)
  end
+ 
+ _addbomb(120,56)
+ _addbomb(120,48)
+ _addbomb(120,40)
+ 
+ for x=8,120,8 do
+  _addbomb(x,32)
+ end
+
 end
 
 ---------- Level 3 -----------
@@ -207,12 +222,7 @@ function _initlevel4()
  end
 
  -- enemies
- local y1=16
- local y2=24
- for x=0,120,16 do
-  _addwpenemy(x,y1,{0,y1,0,y2,120,y2,120,y1})
-  _addwpenemy(x+8,y2,{120,y2,120,y1,0,y1,0,y2})
- end
+ _addenemyconveyer(16)
  
  local speed=0.1
  local delay=-120 -- frames (negative means delay)
@@ -253,9 +263,9 @@ function _initlevel5()
 
 end
 
----------- Level 6 (The Store) -----------
+---------- Level 10 (The Store) -----------
 
-function _initlevel6()
+function _initlevel10()
  plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
  add(doors,{x=0,y=112,w=8,h=8,spr=3,destlevel=1})
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
@@ -273,11 +283,38 @@ function _initlevel6()
 
 end
 
----------- Level 7 -----------
+---------- Level 11 The Fun Level -----------
 
-function _initlevel7()
- plr={} plr.x=0 plr.y=112 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
- _addwpenemy(0,16,{0,16,52,16})
+function _initlevel11()
+ plr={} plr.x=0 plr.y=0 plr.dx=0 plr.dy=0 plr.w=8 plr.h=8
+ add(doors,{x=120,y=120,w=8,h=8,spr=3,destlevel=2}) --??
+ add(walls,{x=0,y=8,w=8,h=8,spr=1})
+ 
+ _addenemyconveyer(16)
+ _addcoinrow(32)
+ _addenemyconveyer(40)
+ _addcoinrow(56)
+ _addenemyconveyer(64)
+ _addcoinrow(80)
+ _addenemyconveyer(88)
+ _addcoinrow(104)
+ _addenemyconveyer(112)
+end
+
+---------- Level Population Utility Functions -----------
+function _addcoinrow(y)
+ for x=0,120,8 do
+  _addcoin(x,y)
+ end
+end
+
+function _addenemyconveyer(y)
+ local y1=y
+ local y2=y+8
+ for x=0,120,16 do
+  _addwpenemy(x,y1,{0,y1,0,y2,120,y2,120,y1})
+  _addwpenemy(x+8,y2,{120,y2,120,y1,0,y1,0,y2})
+ end
 end
 
 -------------------------------
@@ -309,6 +346,10 @@ function _reset()
  elseif level==5 then _initlevel5()
  elseif level==6 then _initlevel6()
  elseif level==7 then _initlevel7()
+ elseif level==8 then _initlevel8()
+ elseif level==9 then _initlevel9()
+ elseif level==10 then _initlevel10()
+ elseif level==11 then _initlevel11()
  end
 
  win=false
@@ -323,7 +364,7 @@ function _reset()
 end
 
 function _init()
- level=1
+ level=2
  _initglobals() 
  _reset()
 end
