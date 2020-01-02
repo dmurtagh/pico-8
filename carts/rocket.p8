@@ -91,6 +91,7 @@ function _initlevel1()
   _addbomb(0,y)
   _addbomb(8,y)
  end
+ music(6)
 end
 
 ---------- Level 2 The Bomb Chase -----------
@@ -140,7 +141,7 @@ function _initlevel2()
  for x=8,120,8 do
   _addbomb(x,32)
  end
-
+ music(7)
 end
 
 ---------- Level 3 Intro the spikies -----------
@@ -168,6 +169,7 @@ function _initlevel4()
 -- local delay=-60 -- frames
 -- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
 
+ music(8)
 end
 
 ---------- Level 5 Intro the Flying Nasties -----------
@@ -215,6 +217,8 @@ function _initlevel5()
  _addwpenemy(88,48,{88,48,0,48})
  _addwpenemy(72,48,{88,48,0,48})
  _addwpenemy(72,48,{0,48,88,48})
+ 
+ music (21)
 end
 
 function _add2ptenemy(x,y,w,h)
@@ -268,6 +272,8 @@ function _initlevel6()
    _addcoin(x,y)
   end
  end
+ 
+ music (21)
 end
 
 ---------- Level 7 (Fly Gauntlet) -----------
@@ -317,6 +323,8 @@ function _initlevel7()
   _addwpenemy(x1,y1,{x1,y1,x1,y2,delay,delay},speed,doffset)
   _addwpenemy(x2,y1,{x2,y1,x2,y2,delay,delay},speed,doffset)
  end
+ 
+ music (21)
 end
 
 ---------- Level 8 (One with a link to the Store) -----------
@@ -330,7 +338,7 @@ function _initlevel8()
  add(doors,{x=54,y=56,w=8,h=8,spr=3,destlevel=9})
  add(doors,{x=66,y=56,w=8,h=8,spr=3,destlevel=kshoplvl}) -- The store
  add(texts,{x=64,y=50,str='SHOP',color=7})
- 
+ music(7)
 end
 
 ---------- Level 9 (The Boss) -----------
@@ -363,6 +371,7 @@ function _initlevel9()
  add(sprites,{x=60,y=112,w=8,h=8,spr=117,target={x=60,y=72},speed=kbossskullspeed,ondone=_startboss}) -- skull
  inputfreeze=1000
  
+ music(18)
 end
 
 ---------- Level 10 (The Store,kshoplvl) -----------
@@ -383,6 +392,7 @@ function _initlevel10()
  --add(texts,{x=70,y=62,str='BLASTRON 5000',color=7})
  add(texts,{x=70,y=62,str='A HAT',color=7})
  add(sprites,{x=78,y=70,w=8,h=8,spr=190,oncollide=_buyhat})
+ music(10)
 end
 
 ---------- Level 11 The Fun Level -----------
@@ -401,6 +411,7 @@ function _initlevel11()
  _addenemyconveyer(88,128)
  _addcoinrow(104)
  _addenemyconveyer(112,128)
+ music(11)
 end
 
 ---------- Populate Level Utility Functions -----------
@@ -463,8 +474,8 @@ function _reset()
  elseif level==11 then _initlevel11()
  end
  
- music()
-
+ sfx(-2,-2) -- stop all
+ 
  win=false
  dead=false
  requirenoinput=false
@@ -529,9 +540,9 @@ end
 
 function _dosfx(sample,channel)
 
- if framessincesfx[channel] > 4 then
+ if framessincesfx[channel+1] > 10 then
   sfx(sample,channel)
-  framessincesfx[channel]=0
+  framessincesfx[channel+1]=0
  end
 end
 
@@ -619,10 +630,11 @@ function _updateboss()
  local damagespot={x=boss.x+6,y=boss.y-2,w=12,h=8}
  --printh("damagespot: x="..damagespot.x..", y="..damagespot.y..")
  --printh("damagespot: x="..damagespot.x..", y="..damagespot.y..")
- if not dead and _isrectoverlap(damagespot,{x=plr.x,y=plr.y+plr.h,w=flamew-0.01,h=flameh}) and bottomrocket and not boss.dead then
+ if bossstate.damagethisround==nil and not dead and _isrectoverlap(damagespot,{x=plr.x,y=plr.y+plr.h,w=flamew-0.01,h=flameh}) and bottomrocket and not boss.dead then
      bossstate.mode=20
      bossstate.nextmodedelay=kbossmode20delay
      bossstate.health-=kbossdamage
+     bossstate.damagethisround=true
     end
 end
 
@@ -655,6 +667,7 @@ function _handlebossmodetransitions(boss)
    e.pal1=3
    e.pal2=6
   end
+  music(24) -- Win music
  end
  
  bossstate.nextmodedelay-=1
@@ -675,6 +688,7 @@ function _handlebossmodetransitions(boss)
    bossstate.nextmodedelay=9999
    bossstate.mode=3
    bossstate.framesinmode3=0 -- For tracking mode 3
+   bossstate.damagethisround=nil
    printh ("mode=" .. bossstate.mode)
   elseif bossstate.mode==20 then -- Back to mode 3 after mode 20, which is temporary
    bossstate.mode=3
@@ -954,23 +968,14 @@ end
 
 function _updateplayer()
  if win then return end
- 
- if sfxn==nil then sfxn=0 end
 
  bottomrocket=btn(4) and not dead and inputfreeze<0
  leftrocket=btn(1) and not dead and inputfreeze<0
  rightrocket=btn(0) and not dead and inputfreeze<0
  if (bottomrocket) then
   plr.dy+=-0.075
-  
   _dosfx(19,1)
  end
- 
- if btn(3) and not btn_3 then
-  sfxn+=1
-  printh(sfxn)
- end
- btn_3=btn(3)
  
  -- Should I add a buff if inventory.siderockets is active
  local acc=0.05
@@ -1023,6 +1028,9 @@ end -- function
 function _update60()
  for i=1,4,1 do
   framessincesfx[i]=(framessincesfx[i]+1)%999
+  if framessincesfx[i]>100 then
+   sfx(-2,i) -- Stop the sfx on this channel
+  end
  end
   
  if (inputfreeze>=0) inputfreeze-=1
@@ -1511,7 +1519,7 @@ __gff__
 __sfx__
 000100002e1502e1502f1502f1502f150351503715000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100001000010000100
 000200002e5502e5503555035550166003a5503a55037500345003350034500385000050000500005000050000500005000050000500005000050000500005000050000500005000050000500005000050000500
-000200001c620385503455031550305502e5502d5501d6201d6201d6001d600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+000200001c610385103451031510305102e5102d5101d6101d6101d6001d600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00010000006500065000650006551305014050140501405014050140501405013050110500e0500b0500905008050070500605005050050500505006050070500105001030010230000000000000000000000000
 000400000024000231062002100000240002310022100213190001a00023000280000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 000300002a750267502a7500070032750377003970039700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700007000070000700
@@ -1576,7 +1584,7 @@ __sfx__
 __music__
 00 16174344
 00 16174344
-01 16174344
+00 16174344
 00 16174344
 00 18194344
 02 18194344
