@@ -43,8 +43,6 @@ __lua__
 ---------- Some Constants -----------
 
 kshoplvl=10
-kbossrocketspeed=1 -- should be 0.05
-kbossskullspeed=2 -- should be 0.3
 
 ---------- Level 1 Intro the Bombs -----------
 function _initlevel1()
@@ -55,6 +53,7 @@ function _initlevel1()
  add(texts,{x=64,y=50,str='SHOP',color=7})
  
  --CHEAT doors
+ --[[
  add(doors,{x=24,y=112,w=8,h=8,spr=3,destlevel=2})
  add(doors,{x=34,y=112,w=8,h=8,spr=3,destlevel=3})
  add(doors,{x=44,y=112,w=8,h=8,spr=3,destlevel=4})
@@ -64,6 +63,7 @@ function _initlevel1()
  add(doors,{x=84,y=112,w=8,h=8,spr=3,destlevel=8})
  add(doors,{x=94,y=112,w=8,h=8,spr=3,destlevel=9})
  add(doors,{x=104,y=112,w=8,h=8,spr=3,destlevel=10})
+ ]]--
  
  add(walls,{x=0,y=120,w=128,h=8,spr=1})
  add(walls,{x=0,y=88,w=16,h=8,spr=1})
@@ -353,6 +353,10 @@ function _initlevel9()
  add(sprites,{x=52,y=72,w=8,h=8,spr=143})
  add(sprites,{x=68,y=72,w=8,h=8,spr=143})
  
+ -- A hacky way to display damage (I'm running out of time)
+ damagespr1={x=54,y=66,w=8,h=8,spr=71}
+ damagespr2={x=66,y=70,w=8,h=8,spr=71}
+ 
  add(bosses,{x=52,y=64,w=24,h=16})
  
  -- ToDo: Would be cool to have a delay before this animation
@@ -433,7 +437,7 @@ function _initglobals()
  inputfreeze=30
  changedlevel=true
  inventory={coins=0}
- costs={siderockets=2,hat=2,blaster=4}
+ costs={siderockets=150,hat=200,blaster=4}
  paused=false
  modalstate={}
  respawnpos=nil
@@ -476,7 +480,7 @@ function _reset()
 end
 
 function _init()
- level=9
+ level=1
  _initglobals() 
  --inventory={coins=0,siderockets=true}
  _reset()
@@ -520,6 +524,26 @@ function _isvcollide(o1,o2) -- is vertical collision or horizontal most importan
  return y6-y5<x6-x5
 end
 
+----- Boss Constants --------
+
+-- Intro sequence
+kbossrocketspeed=0.1 -- should be 0.05
+kbossskullspeed=0.3 -- should be 0.3
+
+-- Boss State machine
+kbosswaspdelay=50
+kbosswaspchance=0.8
+kbossdamage=0.25 -- should be 0.25
+kbossmode0speed=1
+kbossmode0delay=100
+kbossmode1delay=300
+kbossmode1speed=1
+kbossmode2delay=150
+kbossmode2speed=1
+kbossarctime=150 -- Mode 3 speed
+kbossmode20delay=120 -- taking damage
+kbossmode21delay=180
+
 ----- Boss Functions --------
 
 function _startboss()
@@ -537,8 +561,9 @@ function _onrocketintrodone()
  inputfreeze=0
  bossstate={}
  bossstate.target={x=0,y=8}
- bossstate.speed=0.5
- bossstate.mode=1 -- 1=fly on screeen top, drop wasps
+ bossstate.speed=kbossmode0speed
+ bossstate.mode=0 -- 1=Intro mode: fly to screen top left
+ bossstate.nextmodedelay=kbossmode0delay
  bossstate.health=1
 end
 
@@ -565,20 +590,100 @@ function _moveboss(x,y,rocketson)
 end
 
 function _updateboss()
+ 
  local boss=bosses[1]
  if boss==nil or bossstate==nil then return end
- local moved=_lerpboss(boss,bossstate.target,bossstate.speed)
- if not moved then
-  bossstate.target=nil -- Need to compute the next target
- end
  
+ -- Process the boss mode
+ if (bossstate.mode==0) then _updateboss0(boss) end
  if (bossstate.mode==1) then _updateboss1(boss) end
+ if (bossstate.mode==2) then _updateboss2(boss) end
+ if (bossstate.mode==3) then _updateboss3(boss) end
+ if (bossstate.mode==20) then _updateboss20(boss) end
+ if (bossstate.mode==21) then _updateboss21(boss) end
+ 
+ _handlebossmodetransitions(boss)
+ 
+ -- Check for boss damage
+ local damagespot={x=boss.x+6,y=boss.y-2,w=12,h=8}
+ --printh("damagespot: x="..damagespot.x..", y="..damagespot.y..")
+ --printh("damagespot: x="..damagespot.x..", y="..damagespot.y..")
+ if not dead and _isrectoverlap(damagespot,{x=plr.x,y=plr.y+plr.h,w=flamew-0.01,h=flameh}) and bottomrocket and not boss.dead then
+     bossstate.mode=20
+     bossstate.nextmodedelay=kbossmode20delay
+     bossstate.health-=kbossdamage
+    end
 end
 
-kbosswaspdelay=60
-kbosswaspchance=0.7
+function _isbossdead()
+ if bossstate==nil then return false end
+ return bossstate.mode==22
+end
 
-function _updateboss1(boss) -- state 1 update
+function _handlebossmodetransitions(boss)
+ -- Modes are: 
+ -- 1. fly on screeen top, drop wasps
+ -- 2. Transition to top left (or top right, flip a coin)
+ -- 3. Circle down to the player posiiton
+ -- 20. Taking damage, pause movement
+ -- 21. Dead (Falling)
+ -- 22. Dead (Resting)
+ -- Transition between modes if needed
+ printh("bossstate.health: " ..bossstate.health)
+ if bossstate.health<=0 and bossstate.mode!=20 and bossstate.mode!=22 and bossstate.mode!=21 then
+  bossstate.mode=21 -- Dead
+  bossstate.target={x=boss.x,y=104}
+  bossstate.speed=0.3
+  bossstate.nextmodedelay=kbossmode21delay 
+  boss.dead=true
+  for r in all(bossrockets) do
+   r.dead=true
+  end
+  for e in all(enemies) do
+   e.dead=true
+   e.pal1=3
+   e.pal2=6
+  end
+ end
+ 
+ bossstate.nextmodedelay-=1
+ if bossstate.nextmodedelay<=0 then
+  if bossstate.mode==0 then
+   bossstate.nextmodedelay=kbossmode1delay
+   bossstate.mode=1
+   bossstate.speed=kbossmode1speed
+   bossstate.target=nil   
+   printh ("mode=" .. bossstate.mode)
+  elseif bossstate.mode==1 then
+   bossstate.nextmodedelay=kbossmode2delay 
+   bossstate.mode=2
+   bossstate.speed=kbossmode2speed
+   bossstate.target=nil
+   printh ("mode=" .. bossstate.mode)
+  elseif bossstate.mode==2 then
+   bossstate.nextmodedelay=9999
+   bossstate.mode=3
+   bossstate.framesinmode3=0 -- For tracking mode 3
+   printh ("mode=" .. bossstate.mode)
+  elseif bossstate.mode==20 then -- Back to mode 3 after mode 20, which is temporary
+   bossstate.mode=3
+   del(sprites,damagespr1) -- Clear the damage sprites
+   del(sprites,damagespr2) -- Clear the damage sprites
+   printh ("mode=" .. bossstate.mode)
+  elseif bossstate.mode==21 then -- Dead falling, transition to resting
+   bossstate.mode=22
+   del(sprites,damagespr1) -- Clear the damage sprites
+   del(sprites,damagespr2) -- Clear the damage sprites
+   printh ("mode=" .. bossstate.mode)
+  end
+ end
+end
+
+function _updateboss0(boss) -- mode 0 (intro) updates
+ local moved=_lerpboss(boss,bossstate.target,bossstate.speed)
+end
+
+function _updateboss1(boss) -- mode 1 update
  if bossstate.nextwaspdelay==nil then
   bossstate.nextwaspdelay=kbosswaspdelay
  else
@@ -591,20 +696,86 @@ function _updateboss1(boss) -- state 1 update
   end
  end
  
- -- Hover over and back at the top of the screen
- if bossstate.target==nil then
+ local moved=_lerpboss(boss,bossstate.target,bossstate.speed)
+ 
+ -- Compute a new position to hover over and back at the top of the screen
+ if not moved then
   local r1=rnd(30)
   r1=flr((r1*r1)/30) -- weight it towards the lower end
   if boss.x<64 then
    bossstate.target={x=96-r1,y=8}
   else
    bossstate.target={x=r1,y=8}
-  end
+  end -- if boss.x...
+ end -- if bossstate...
+end -- function
+ 
+ 
+function _updateboss2(boss) -- mode 2 update: Transition to top left (or top right, flip a coin)
+ _lerpboss(boss,bossstate.target,bossstate.speed)
+ if bossstate.target!=nil then return end -- Target already set
+ if rnd(1)<0.5 then
+  bossstate.target={x=0,y=8}
+ else
+  bossstate.target={x=96,y=8}
  end
 end
 
+function _updateboss3(boss) -- state 3 update: Circle down to the player posiiton
+ if bossstate.framesinmode3==kbossarctime then
+  bossstate.mode=1 -- 1=fly on screeen top, drop wasps
+  bossstate.nextmodedelay=kbossmode1delay
+  bossstate.speed=kbossmode1speed
+ end
+
+ if bossstate.framesinmode3 == 0 then -- initialize direction
+  if boss.x < 48 then 
+   bossstate.direction=-1
+  else 
+   bossstate.direction=1
+  end
+ end
+
+ local theta=0.5*bossstate.framesinmode3/kbossarctime
+ if bossstate.direction==-1 then
+  theta=0.5-theta 
+ end
+ 
+ local x=48+cos(theta)*48
+ local y=8-sin(theta)*90
+ _moveboss(x,y,true)
+ 
+ bossstate.framesinmode3+=1
+end
+
+function _updateboss20(boss) -- state 3 update
+ if bossstate.framesinmode20==nil then bossstate.framesinmode20=0 end
+ bossstate.framesinmode20+=1
+ 
+ damagespr1.x=boss.x+2  
+ damagespr1.y=boss.y+4
+ damagespr2.x=boss.x+14
+ damagespr2.y=boss.y+6
+
+ if bossstate.framesinmode20%20==3 then
+  add(sprites,damagespr1)
+ elseif bossstate.framesinmode20%20==8 then
+  add(sprites,damagespr2)
+ elseif bossstate.framesinmode20%20==13 then
+  del(sprites,damagespr1)
+ elseif bossstate.framesinmode20%20==18 then
+  del(sprites,damagespr2)
+ end
+end
+
+function _updateboss21(boss)
+ _updateboss20(boss)
+ -- Fall to the ground
+ _lerpboss(boss,bossstate.target,bossstate.speed)
+end
+
 function _lerpboss(boss,target,speed) -- could make this more general if I had time
- if target==nil then return end
+ if target==nil then return false end
  local moved=false
  local newx=boss.x
  local newy=boss.y
@@ -841,11 +1012,11 @@ function _update60()
  _updateenemies()
  _dieoncollision(enemies,0.05) -- 0.05 safety buffer
  _dieoncollision(spikes,0)
- _dieoncollision(bosses,0) -- ToDo: Should this just push the player back like a wall?
- _dieoncollision(bossrockets,0)
  
  _updatesprites()
  _updateboss()
+ _dieoncollision(bosses,0) -- ToDo: Should this just push the player back like a wall?
+ _dieoncollision(bossrockets,0)
  
  if level!=kshoplvl then _collectoncollision(coins,'coins') end -- kshoplvl is the shop, don't process coins
  
@@ -1016,11 +1187,10 @@ function _draw()
   pal()
  end
  
- if win then
- -- rectfill(44,52,84,76,7)
- -- print("YOU WIN",51,58,0)
- -- print("[NEXT]",53,66,1)
- end
+if _isbossdead() then
+ rectfill(15,40,105,80,7)
+ print("YAY. ROCKET DUDE\nHAS DEFEATED THE EVIL\nSKULL EMPIRE.\nTHANKS FOR PLAYING!!!",20,45,0)
+end
  
  if modalstate.displaymessage~=nil then
    rectfill(20,50,108,80,7)
