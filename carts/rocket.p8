@@ -442,6 +442,7 @@ function _initglobals()
  modalstate={}
  respawnpos=nil
  previouslevel=1
+ framessincesfx={0,0,0,0}
 end
 
 function _reset()
@@ -461,6 +462,8 @@ function _reset()
  elseif level==10 then _initlevel10()
  elseif level==11 then _initlevel11()
  end
+ 
+ music()
 
  win=false
  dead=false
@@ -522,6 +525,14 @@ end
 function _isvcollide(o1,o2) -- is vertical collision or horizontal most important
  local x5,y5,x6,y6=_rectoverlap(o1,o2)
  return y6-y5<x6-x5
+end
+
+function _dosfx(sample,channel)
+
+ if framessincesfx[channel] > 4 then
+  sfx(sample,channel)
+  framessincesfx[channel]=0
+ end
 end
 
 ----- Boss Constants --------
@@ -855,6 +866,8 @@ function _updatebombs()
    b.ttl-=0.01667
    b.palt=(b.ttl*10)%2
    if (b.ttl<=0 and b.spr==153) then 
+    _dosfx(8,2)
+    
     b.spr=71 b.ttl=0.1
     -- explode surrounding bombs
     for b2 in all(bombs) do
@@ -934,17 +947,30 @@ function _collectoncollision(list,typename)
   if (_isrectoverlap(plr,obj) and not dead) then
    del(list,obj)
    inventory[typename]+=1
+   _dosfx(2,3)
   end
  end
 end
 
 function _updateplayer()
  if win then return end
+ 
+ if sfxn==nil then sfxn=0 end
 
  bottomrocket=btn(4) and not dead and inputfreeze<0
  leftrocket=btn(1) and not dead and inputfreeze<0
  rightrocket=btn(0) and not dead and inputfreeze<0
- if (bottomrocket) plr.dy+=-0.075
+ if (bottomrocket) then
+  plr.dy+=-0.075
+  
+  _dosfx(19,1)
+ end
+ 
+ if btn(3) and not btn_3 then
+  sfxn+=1
+  printh(sfxn)
+ end
+ btn_3=btn(3)
  
  -- Should I add a buff if inventory.siderockets is active
  local acc=0.05
@@ -995,6 +1021,10 @@ function _updatesprites()
 end -- function
 
 function _update60()
+ for i=1,4,1 do
+  framessincesfx[i]=(framessincesfx[i]+1)%999
+ end
+  
  if (inputfreeze>=0) inputfreeze-=1
  
  local btn_pressed=btn(0) or btn(1) or btn(2) or btn(4)
@@ -1061,9 +1091,9 @@ function _buyhat()
  if inventory.coins>=costs.hat then
   buyitem="hat"
   itemcost=costs.hat
-  displaymodal("BUY FOR " .. costs.siderockets .. " COINS? (BUT\nWHAT DOES IT DO?!?)",confirmbuy,cancelbuy)
+  displaymodal("BUY FOR " .. costs.hat .. " COINS? (BUT\nWHAT DOES IT DO?!?)",confirmbuy,cancelbuy)
  else
-  displaymodal("YOU NEED " .. costs.siderockets .. " COINS\nTO BUY THE HAT",nil,nil)
+  displaymodal("YOU NEED " .. costs.hat .. " COINS\nTO BUY THE HAT",nil,nil)
  end
 end
 
@@ -1187,10 +1217,10 @@ function _draw()
   pal()
  end
  
-if _isbossdead() then
- rectfill(15,40,105,80,7)
- print("YAY. ROCKET DUDE\nHAS DEFEATED THE EVIL\nSKULL EMPIRE.\nTHANKS FOR PLAYING!!!",20,45,0)
-end
+ if _isbossdead() then
+  rectfill(15,40,105,80,7)
+  print("YAY. ROCKET DUDE\nHAS DEFEATED THE EVIL\nSKULL EMPIRE.\nTHANKS FOR PLAYING!!!",20,45,0)
+ end
  
  if modalstate.displaymessage~=nil then
    rectfill(20,50,108,80,7)
