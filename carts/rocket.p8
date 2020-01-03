@@ -279,7 +279,7 @@ end
 ---------- Level 7 (Fly Gauntlet) -----------
 function _initlevel7()
  _initplr(0,112)
- add(doors,{x=120,y=32,w=8,h=8,spr=3,destlevel=1})
+ add(doors,{x=104,y=32,w=8,h=8,spr=3,destlevel=1})
  add(doors,{x=120,y=0,w=8,h=8,spr=3,destlevel=8})
  add(doors,{x=8,y=80,w=8,h=8,spr=3,destlevel=7,destdoor=4})
  add(doors,{x=0,y=32,w=8,h=8,spr=3,destlevel=7,destdoor=3})
@@ -491,6 +491,38 @@ function _reset()
  else
   respawnpos=nil
  end
+ 
+ _createbombslookup()
+end
+
+-- A lookup table to look up bombs by position
+function _createbombslookup()
+ bombslookup={}
+ for i=1,16,1 do add(bombslookup,{}) end
+ local x,y
+ for b in all(bombs) do
+  x=flr(b.x/8)+1
+  y=flr(b.y/8)+1
+  bombslookup[x][y]=b
+ end
+end
+
+function _getclosestbombs(x,y)
+ local bombs={}
+ local xlookup=flr(x/8)+1
+ local ylookup=flr(y/8)+1
+ for i=xlookup-1,xlookup+1,1 do
+  if i>0 and i<17 then
+   for j=ylookup-1,ylookup+1,1 do
+    if j>0 and j<17 then
+     if bombslookup[i][j]~=nil then
+      add(bombs,bombslookup[i][j])
+     end
+    end
+   end
+  end
+ end
+ return bombs
 end
 
 function _init()
@@ -539,7 +571,6 @@ function _isvcollide(o1,o2) -- is vertical collision or horizontal most importan
 end
 
 function _dosfx(sample,channel)
-
  if framessincesfx[channel+1] > 10 then
   sfx(sample,channel)
   framessincesfx[channel+1]=0
@@ -628,8 +659,6 @@ function _updateboss()
  
  -- Check for boss damage
  local damagespot={x=boss.x+6,y=boss.y-2,w=12,h=8}
- --printh("damagespot: x="..damagespot.x..", y="..damagespot.y..")
- --printh("damagespot: x="..damagespot.x..", y="..damagespot.y..")
  if bossstate.damagethisround==nil and not dead and _isrectoverlap(damagespot,{x=plr.x,y=plr.y+plr.h,w=flamew-0.01,h=flameh}) and bottomrocket and not boss.dead then
      bossstate.mode=20
      bossstate.nextmodedelay=kbossmode20delay
@@ -652,7 +681,6 @@ function _handlebossmodetransitions(boss)
  -- 21. Dead (Falling)
  -- 22. Dead (Resting)
  -- Transition between modes if needed
- printh("bossstate.health: " ..bossstate.health)
  if bossstate.health<=0 and bossstate.mode!=20 and bossstate.mode!=22 and bossstate.mode!=21 then
   bossstate.mode=21 -- Dead
   bossstate.target={x=boss.x,y=104}
@@ -677,29 +705,24 @@ function _handlebossmodetransitions(boss)
    bossstate.mode=1
    bossstate.speed=kbossmode1speed
    bossstate.target=nil   
-   printh ("mode=" .. bossstate.mode)
   elseif bossstate.mode==1 then
    bossstate.nextmodedelay=kbossmode2delay 
    bossstate.mode=2
    bossstate.speed=kbossmode2speed
    bossstate.target=nil
-   printh ("mode=" .. bossstate.mode)
   elseif bossstate.mode==2 then
    bossstate.nextmodedelay=9999
    bossstate.mode=3
    bossstate.framesinmode3=0 -- For tracking mode 3
    bossstate.damagethisround=nil
-   printh ("mode=" .. bossstate.mode)
   elseif bossstate.mode==20 then -- Back to mode 3 after mode 20, which is temporary
    bossstate.mode=3
    del(sprites,damagespr1) -- Clear the damage sprites
    del(sprites,damagespr2) -- Clear the damage sprites
-   printh ("mode=" .. bossstate.mode)
   elseif bossstate.mode==21 then -- Dead falling, transition to resting
    bossstate.mode=22
    del(sprites,damagespr1) -- Clear the damage sprites
    del(sprites,damagespr2) -- Clear the damage sprites
-   printh ("mode=" .. bossstate.mode)
   end
  end
 end
@@ -864,18 +887,23 @@ function _applygravity(obj)
 end
 
 function _updatebombs()
- for b in all(bombs) do
+ -- plr proximity test
+ local nearplr = _getclosestbombs(plr.x,plr.y)
+ for b in all(nearplr) do
   if (bottomrocket and _isrectoverlap(b,{x=plr.x,y=plr.y+plr.h,w=flamew,h=flameh})) or
-     (inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(b,{x=plr.x-4,y=plr.y,w=4,h=plr.h})) or
-     (inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(b,{x=plr.x+plr.h,y=plr.y,w=4,h=plr.h})) then
+      (inventory.siderockets~=nil and leftrocket and not dead and _isrectoverlap(b,{x=plr.x-4,y=plr.y,w=4,h=plr.h})) or
+      (inventory.siderockets~=nil and rightrocket and not dead and _isrectoverlap(b,{x=plr.x+plr.h,y=plr.y,w=4,h=plr.h})) then
    b.fcount+=1
    b.nfcount=0
-   if (b.fcount>f_to_light and b.spr==153 and b.lit==nil) b.ttl=bomb_ttl b.lit=true
+  if (b.fcount>f_to_light and b.spr==153 and b.lit==nil) b.ttl=bomb_ttl b.lit=true
   else
    b.nfcount+=1
    if (b.nfcount>=f_to_reset) b.fcount = 0
   end
-   
+ end
+ 
+ local nearbybombs={}
+ for b in all(bombs) do
   if b.ttl > 0 then
    b.ttl-=0.01667
    b.palt=(b.ttl*10)%2
@@ -884,7 +912,8 @@ function _updatebombs()
     
     b.spr=71 b.ttl=0.1
     -- explode surrounding bombs
-    for b2 in all(bombs) do
+    nearbybombs=_getclosestbombs(b.x,b.y)
+    for b2 in all(nearbybombs) do
      if b2.spr==153 and _isrectoverlap(b,b2) then
       b2.ttl = 0.2
      end
@@ -1028,7 +1057,7 @@ end -- function
 function _update60()
  for i=1,4,1 do
   framessincesfx[i]=(framessincesfx[i]+1)%999
-  if framessincesfx[i]>100 then
+  if framessincesfx[i]==100 then
    sfx(-2,i) -- Stop the sfx on this channel
   end
  end
