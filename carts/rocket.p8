@@ -165,8 +165,8 @@ function _initlevel4()
   _addcoin(x,22)
  end
  
--- local speed=0.1
--- local delay=-60 -- frames
+-- local speed=0.2
+-- local delay=-30 -- frames
 -- _addwpenemy(24,96,{24,96,delay,delay,24,104},speed)
 
  music(8)
@@ -311,15 +311,15 @@ function _initlevel7()
  -- enemies
  _addenemyconveyer(16,112)
  
- local speed=0.1
- local delay=-120 -- frames (negative means delay)
+ local speed=0.2
+ local delay=-60 -- frames (negative means delay)
  local y1=108 
  local y2=94
  
  for i=0,3,1 do
   x1=24+(i*16)
   x2=32+(i*16)
-  doffset=i*80 -- delay before start
+  doffset=i*40 -- delay before start
   _addwpenemy(x1,y1,{x1,y1,x1,y2,delay,delay},speed,doffset)
   _addwpenemy(x2,y1,{x2,y1,x2,y2,delay,delay},speed,doffset)
  end
@@ -437,15 +437,15 @@ end
 
 -------------------------------
 function _initglobals()
- max_speed=1
+ max_speed=2
  frame=0
  bomb_ttl=0.6
  blast_ext=2 -- n pixels
  flameh = 5 -- flame height
  flamew = 8 -- flame height
- f_to_light = 20 -- 60 frames of flame to light bombs
- f_to_reset = 20 -- 60 frames of no flame to reset a bomb 
- inputfreeze=30
+ f_to_light = 10 -- frames of flame to light bombs
+ f_to_reset = 10 -- frames of no flame to reset a bomb 
+ inputfreeze=15
  changedlevel=true
  inventory={coins=0}
  costs={siderockets=150,hat=200,blaster=4}
@@ -539,32 +539,33 @@ function _isvcollide(o1,o2) -- is vertical collision or horizontal most importan
 end
 
 function _dosfx(sample,channel)
-
+--[[
  if framessincesfx[channel+1] > 10 then
   sfx(sample,channel)
   framessincesfx[channel+1]=0
  end
+ ]]--
 end
 
 ----- Boss Constants --------
 
 -- Intro sequence
-kbossrocketspeed=0.1 -- should be 0.05
-kbossskullspeed=0.3 -- should be 0.3
+kbossrocketspeed=0.2 -- should be 0.05
+kbossskullspeed=0.6 -- should be 0.3
 
 -- Boss State machine
-kbosswaspdelay=50
+kbosswaspdelay=25
 kbosswaspchance=0.8
 kbossdamage=0.25 -- should be 0.25
-kbossmode0speed=1
-kbossmode0delay=100
-kbossmode1delay=300
-kbossmode1speed=1
-kbossmode2delay=150
-kbossmode2speed=1
-kbossarctime=150 -- Mode 3 speed
-kbossmode20delay=120 -- taking damage
-kbossmode21delay=180
+kbossmode0speed=2
+kbossmode0delay=50
+kbossmode1delay=150
+kbossmode1speed=2
+kbossmode2delay=75
+kbossmode2speed=2
+kbossarctime=75 -- Mode 3 speed
+kbossmode20delay=60 -- taking damage
+kbossmode21delay=90
 
 ----- Boss Functions --------
 
@@ -656,7 +657,7 @@ function _handlebossmodetransitions(boss)
  if bossstate.health<=0 and bossstate.mode!=20 and bossstate.mode!=22 and bossstate.mode!=21 then
   bossstate.mode=21 -- Dead
   bossstate.target={x=boss.x,y=104}
-  bossstate.speed=0.3
+  bossstate.speed=0.6
   bossstate.nextmodedelay=kbossmode21delay 
   boss.dead=true
   for r in all(bossrockets) do
@@ -845,9 +846,9 @@ function _collide(obj, list)
 end
 
 function _applygravity(obj)
- obj.dy=obj.dy+0.03 -- gravity
- obj.dx*=0.95
- obj.dy*=0.95
+ obj.dy=obj.dy+0.06 -- gravity
+ obj.dx*=0.975
+ obj.dy*=0.975
  
  if (obj.dx > max_speed) obj.dx = max_speed
  if (obj.dx < -max_speed) obj.dx = -max_speed
@@ -894,7 +895,7 @@ function _updatebombs()
    if (b.ttl<=0 and b.spr==72) b.spr=73 b.ttl=0.1
    if (b.ttl<=0 and b.spr==73) b.spr=74 b.ttl=0.1
    if b.ttl<=0 and b.spr==74 then del(bombs,b) end
-   if (b.spr<74 and _isrectoverlap(plr,{x=b.x-blast_ext,y=b.y-blast_ext,w=b.w+(2*blast_ext),h=b.h+(2*blast_ext)}) and not dead) dead=true inputfreeze=30
+   if (b.spr<74 and _isrectoverlap(plr,{x=b.x-blast_ext,y=b.y-blast_ext,w=b.w+(2*blast_ext),h=b.h+(2*blast_ext)}) and not dead) dead=true inputfreeze=15
   end
  end 
 end
@@ -903,7 +904,7 @@ function _updateenemies()
  local targetx,targety,moved
  for e in all(enemies) do
   if e.dead==nil then
-   local speed=0.3 -- px/frame
+   local speed=0.6 -- px/frame
    if (e.speed != nil) speed=e.speed
    targetx=e.wp[1] targety=e.wp[2] gotonextwp=true
    
@@ -952,7 +953,7 @@ end --function
 function _dieoncollision(list,safety)
  if list==nil then return end
  for obj in all(list) do
-  if (obj.dead==nil and _isrectoverlap(plr,{x=obj.x+safety,y=obj.y+safety,w=obj.w-(safety*2),h=obj.h-(safety*2)}) and not dead) dead=true requirenoinput=true inputfreeze=30
+  if (obj.dead==nil and _isrectoverlap(plr,{x=obj.x+safety,y=obj.y+safety,w=obj.w-(safety*2),h=obj.h-(safety*2)}) and not dead) dead=true requirenoinput=true inputfreeze=15
  end
 end
 
@@ -973,15 +974,15 @@ function _updateplayer()
  leftrocket=btn(1) and not dead and inputfreeze<0
  rightrocket=btn(0) and not dead and inputfreeze<0
  if (bottomrocket) then
-  plr.dy+=-0.075
+  plr.dy+=-0.15
   _dosfx(19,1)
  end
  
  -- Should I add a buff if inventory.siderockets is active
  local acc=0.05
  if (inventory.siderockets) acc=0.65
- if (leftrocket) plr.dx+=acc
- if (rightrocket) plr.dx-=acc
+ if (leftrocket) plr.dx+=acc*2
+ if (rightrocket) plr.dx-=acc*2
  
  _applygravity(plr)
  
@@ -992,7 +993,7 @@ function _updateplayer()
  for d in all(doors) do
   if _isrectoverlap(plr,d) and btn(2) and inputfreeze<0 and not dead then
    win=true nextlevel=d.destlevel
-   inputfreeze=15
+   inputfreeze=7
    if (d.destdoor~=nil) destdoor=d.destdoor
   end
  end
@@ -1025,11 +1026,11 @@ function _updatesprites()
  end -- for loop
 end -- function
 
-function _update60()
+function _update()
  for i=1,4,1 do
   framessincesfx[i]=(framessincesfx[i]+1)%999
-  if framessincesfx[i]>100 then
-   sfx(-2,i) -- Stop the sfx on this channel
+  if framessincesfx[i]==30 then
+   --sfx(-2,i) -- Stop the sfx on this channel
   end
  end
   
@@ -1137,20 +1138,20 @@ function handlemodalinput()
   elseif btn(4) then
    if modalstate.confirmselected then
     modalstate.onconfirm()
-    modalstate.displaymessage=nil inputfreeze=30
+    modalstate.displaymessage=nil inputfreeze=15
    else
     modalstate.oncancel()
-    modalstate.displaymessage=nil inputfreeze=30
+    modalstate.displaymessage=nil inputfreeze=15
    end -- modalstate.confirmselected
   end -- elseif btn(4)
  elseif modalstate.oncancel~=nil and btn(4) then
   modalstate.oncancel()
-  modalstate.displaymessage=nil inputfreeze=30
+  modalstate.displaymessage=nil inputfreeze=15
  elseif btn(4) then
   if modalstate.onconfirm~=null then 
    modalstate.onconfirm() 
   end
-  modalstate.displaymessage=nil inputfreeze=30
+  modalstate.displaymessage=nil inputfreeze=15
  end
 end
 
@@ -1175,7 +1176,7 @@ function _draw_objects(list)
     end
     
     fr = 0; -- frame for animation
-    if (o.fr~=nil and o.dead==nil) fr=(frame/15)%o.fr -- don't animate dead things
+    if (o.fr~=nil and o.dead==nil) fr=(frame/7.5)%o.fr -- don't animate dead things
     flipx=false
     if (o.flipx!=nil) flipx=o.flipx
     spr(o.spr+fr,x,y,1,1,flipx)
@@ -1186,8 +1187,6 @@ end
 
 function _draw()
  frame+=1
- local c1=8+((frame/5)%2)
- local c2=8+(((frame/5)+1)%2)
  cls ()
  
  if level~=kshoplvl then _draw_objects(coins) end
