@@ -127,7 +127,7 @@ function _initlevel2()
  _addcoin(0,72)
  _addcoin(0,64)
  _addbomb(8,72)
- _addbomb(16,72)
+ --_addbomb(16,72)
  
  for x=8,120,8 do
   _addbomb(x,64)
